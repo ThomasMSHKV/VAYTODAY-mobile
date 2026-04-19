@@ -1,5 +1,5 @@
 name: VayToday
-description: "A new Flutter project."
+description: "Каталог компаний с чатом"
 publish_to: 'none'
 version: 0.1.0+1
 
@@ -9,11 +9,65 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  # Управление состоянием (Cubit)
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+  
+  # Навигация
+  go_router: ^14.3.0
+  
+  # Сеть и API
+  dio: ^5.7.0
+  retrofit: ^4.4.1
+  json_annotation: ^4.9.0
+  
+  # Локальное хранилище
+  shared_preferences: ^2.3.2
+  
+  # Карты (позже)
+  # yandex_mapkit: ^4.2.0
+  
+  # Изображения
+  cached_network_image: ^3.4.1
+  image_picker: ^1.1.2
+  
+  # Уведомления и чат
+  firebase_core: ^3.8.0
+  firebase_messaging: ^15.1.5
+  cloud_firestore: ^5.5.0
+  firebase_auth: ^5.3.3
+  
+  # UI утилиты
+  flutter_svg: ^2.0.16
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  build_runner: ^2.4.13
+  retrofit_generator: ^9.1.2
+  json_serializable: ^6.8.0
+  flutter_launcher_icons: ^0.14.1   # ← ОСТАВЛЯЕМ ТОЛЬКО ЗДЕСЬ
+
+# ← ВЫНОСИМ НАСТРОЙКИ СЮДА (НА ВЕРХНИЙ УРОВЕНЬ)
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  remove_alpha_ios: true
+  web:
+    generate: true
+  windows:
+    generate: true
+  macos:
+    generate: true
 
 flutter:
   uses-material-design: true
+  
+  assets:
+    - assets/icons/
+    - assets/images/
