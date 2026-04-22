@@ -4,12 +4,16 @@ class AppColors {
   static const Color primary = Color(0xFF2563EB);
   static const Color secondary = Color(0xFF10B981);
   static const Color accent = Color(0xFFEEA54D);        // Активный цвет иконки
-  static const Color background = Color(0xFFF8FAFC);
+  static const Color whiteColor = Color(0xFFF8FAFC);
   static const Color surface = Color(0xFFFFFFFF);
+  static const Color mainVTColor = Color.fromARGB(255, 244, 209, 126);
+
   static const Color error = Color(0xFFEF4444);
-  
   static const Color textPrimary = Color(0xFF1E293B);
+  static const Color blackColor = Color.fromARGB(0, 0, 0, 0);
   static const Color textSecondary = Color(0xFF64748B);
+  static const Color hintColor = Color(0xFF64748B);
+
   static const Color textLight = Color(0xFF9CA3AF);     // Серый для неактивных иконок
   
   static const Color border = Color(0xFFE2E8F0);
