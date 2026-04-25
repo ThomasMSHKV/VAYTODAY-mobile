@@ -4,33 +4,28 @@ import 'package:flutter/material.dart';
 class PopularCompanyCard extends StatelessWidget {
   final PopularCompany company;
 
-  const PopularCompanyCard({
-    super.key,
-    required this.company,
-  });
+  const PopularCompanyCard({super.key, required this.company});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 250,
-      padding: const EdgeInsets.all(16),
+      width: 160,
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: const Color(0xFFE9D9A8),
-          width: 1.3,
-        ),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: const Color(0xFFE9D9A8), width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Stack(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(22),
                 child: SizedBox(
-                  height: 160,
+                  height: 100,
                   width: double.infinity,
                   child: Image.network(
                     company.imageUrl,
@@ -39,86 +34,61 @@ class PopularCompanyCard extends StatelessWidget {
                       return Container(
                         color: Colors.grey.shade300,
                         alignment: Alignment.center,
-                        child: const Icon(Icons.image_outlined, size: 42),
+                        child: const Icon(Icons.image_outlined, size: 34),
                       );
                     },
                   ),
                 ),
               ),
               Positioned(
-                right: 10,
-                bottom: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFB27D2F).withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        company.rating.toStringAsFixed(1),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                        ),
+                right: 8,
+                bottom: 8,
+                child: Row(
+                  children: [
+                    Text(
+                      company.rating.toStringAsFixed(1),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
                       ),
-                      const SizedBox(width: 6),
-                      const Icon(
+                    ),
+                    const SizedBox(width: 3),
+                    ...List.generate(
+                      5,
+                      (_) => const Icon(
                         Icons.star_rounded,
                         color: Color(0xFFFFD54F),
-                        size: 16,
+                        size: 13,
                       ),
-                      const Icon(
-                        Icons.star_rounded,
-                        color: Color(0xFFFFD54F),
-                        size: 16,
-                      ),
-                      const Icon(
-                        Icons.star_rounded,
-                        color: Color(0xFFFFD54F),
-                        size: 16,
-                      ),
-                      const Icon(
-                        Icons.star_rounded,
-                        color: Color(0xFFFFD54F),
-                        size: 16,
-                      ),
-                      const Icon(
-                        Icons.star_rounded,
-                        color: Color(0xFFFFD54F),
-                        size: 16,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
           Text(
             company.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w800,
               color: Colors.black,
+              height: 1.1,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             company.category,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: Colors.grey.shade600,
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w400,
+              height: 1.1,
             ),
           ),
         ],

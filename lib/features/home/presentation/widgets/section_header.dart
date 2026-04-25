@@ -10,6 +10,7 @@ class SectionHeader extends StatelessWidget {
     required this.title,
     this.actionText,
     this.onActionTap,
+    TextStyle? style,
   });
 
   @override
@@ -20,10 +21,10 @@ class SectionHeader extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: Colors.black,
-              ),
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: Colors.black,
+          ),
         ),
         if (actionText != null)
           GestureDetector(
@@ -31,9 +32,9 @@ class SectionHeader extends StatelessWidget {
             child: Text(
               actionText!,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
-                  ),
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
       ],

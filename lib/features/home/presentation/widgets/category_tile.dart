@@ -4,15 +4,12 @@ import 'package:flutter/material.dart';
 class CategoryTile extends StatelessWidget {
   final HomeCategory category;
 
-  const CategoryTile({
-    super.key,
-    required this.category,
-  });
+  const CategoryTile({super.key, required this.category});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 148,
+      width: 120,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
       decoration: BoxDecoration(
         color: const Color(0xFFECEDE3),
