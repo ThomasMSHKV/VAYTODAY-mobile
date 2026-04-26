@@ -36,6 +36,22 @@ class HomeMockData {
       title: 'Хоз услуги',
       imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952',
     ),
+    HomeCategory(
+      title: 'Образование',
+      imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952',
+    ),
+    HomeCategory(
+      title: 'Питание',
+      imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952',
+    ),
+    HomeCategory(
+      title: 'Спорт',
+      imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952',
+    ),
+    HomeCategory(
+      title: 'Мебель',
+      imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952',
+    ),
   ];
 
   static const List<RecommendationItem> recommendations = [
