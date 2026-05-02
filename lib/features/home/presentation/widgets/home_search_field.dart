@@ -8,7 +8,7 @@ class HomeSearchField extends StatelessWidget {
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: const Color.fromARGB(0, 255, 0, 0),
         borderRadius: BorderRadius.circular(32),
       ),
       child: TextField(
