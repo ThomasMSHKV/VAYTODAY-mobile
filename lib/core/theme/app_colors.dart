@@ -31,4 +31,9 @@ class AppColors {
   static const Color categoryCardBackground = Color(0xFFEFF1E6);
   static const Color categoryTitle = Color(0xFF62645E);
   static const Color discountPurple = Color(0xFFB86AF0);
+
+  static const Color companyCardBackground = Color(0xFFFFFFFF);
+  static const Color cityFilterActive = Color(0xFF566959);
+  static const Color cityFilterInactive = Color(0xFFFFFFFF);
+  static const Color starYellow = Color(0xFFFFB800);
 }

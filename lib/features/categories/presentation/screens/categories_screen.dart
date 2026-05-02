@@ -18,7 +18,7 @@ class CategoriesScreen extends StatelessWidget {
         slivers: [
           const CategoriesAppBar(),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 56)),
+          const SliverToBoxAdapter(child: SizedBox(height: 30)),
 
           const SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: 20),
