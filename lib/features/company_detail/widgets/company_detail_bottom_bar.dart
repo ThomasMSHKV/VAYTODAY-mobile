@@ -53,7 +53,7 @@ class CompanyDetailBottomBar extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onMessageTap,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.buttonYellow,
+                    backgroundColor: AppColors.favoriteYellow,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
