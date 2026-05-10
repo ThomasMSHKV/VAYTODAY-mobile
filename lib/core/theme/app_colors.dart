@@ -45,5 +45,12 @@ class AppColors {
   static const Color detailTextGreen = Color(0xFF435648);
   static const Color detailLightGreen = Color(0xFFEEF3E8);
   static const Color favoriteYellow = Color(0xFFF4D17E);
-  static const Color buttonYellow = Color(0xFFF4D17E);
+
+  static const Color authBackground = Color(0xFFF4EEE6);
+  static const Color authGold = Color(0xFFF4D17E);
+  static const Color authBlack = Color(0xFF1E1E1E);
+  static const Color authCard = Color(0xFFFFFFFF);
+  static const Color authHint = Color(0xFFCDD6DF);
+  static const Color authText = Color(0xFF111111);
+  static const Color authSubtitle = Color(0xFF666666);
 }
