@@ -10,39 +10,49 @@ class CategoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 120,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
       decoration: BoxDecoration(
         color: const Color(0xFFECEDE3),
         borderRadius: BorderRadius.circular(22),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            category.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF66675F),
+          // Заголовок — с отступами
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            child: Text(
+              category.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF66675F),
+              ),
             ),
           ),
-          const SizedBox(height: 10),
+
+          // Картинка — на всю ширину, без отступов
           Expanded(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: Image.network(
-                category.imageUrl,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(22),
+                bottomRight: Radius.circular(22),
+              ),
+              child: SizedBox(
                 width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) {
-                  return Container(
-                    color: Colors.grey.shade300,
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.image_outlined, size: 36),
-                  );
-                },
+                child: Image.network(
+                  category.imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) {
+                    return Container(
+                      color: Colors.grey.shade300,
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.image_outlined, size: 36),
+                    );
+                  },
+                ),
               ),
             ),
           ),
