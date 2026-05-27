@@ -3,32 +3,42 @@ import 'package:VayToday/core/theme/app_colors.dart';
 
 class AuthSubmitButton extends StatelessWidget {
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final bool isEnabled;
 
-  const AuthSubmitButton({super.key, required this.icon, required this.onTap});
+  const AuthSubmitButton({
+    super.key,
+    required this.icon,
+    required this.onTap,
+    this.isEnabled = true,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      right: 30,
-      top: 80,
+      right: 25,
+      top: 100,
       child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: AppColors.authBlack,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.22),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
+        onTap: isEnabled ? onTap : null,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 180),
+          opacity: isEnabled ? 1 : 0.35,
+          child: Container(
+            width: 65,
+            height: 65,
+            decoration: BoxDecoration(
+              color: AppColors.authBlack,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.22),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Icon(icon, color: AppColors.authGold, size: 44),
           ),
-          child: Icon(icon, color: AppColors.authGold, size: 44),
         ),
       ),
     );

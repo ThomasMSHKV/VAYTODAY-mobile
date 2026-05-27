@@ -1,13 +1,25 @@
+import 'package:VayToday/features/other/presentation/screens/privacy_policy_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
+import 'package:VayToday/features/auth/presentation/screens/verify_code_screen.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_background.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_input_field.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_submit_button.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_switch_button.dart';
 
-class RegisterScreen extends StatelessWidget {
+class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  bool _isPrivacyAccepted = false;
+  bool _isPersonalDataAccepted = false;
+
+  bool get _canSubmit => _isPrivacyAccepted && _isPersonalDataAccepted;
 
   @override
   Widget build(BuildContext context) {
@@ -100,20 +112,51 @@ class RegisterScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          top: 110,
-                          left: 270,
-                        ), // Настройте величину отступа
-                        child: AuthSubmitButton(
-                          icon: Icons.check_rounded,
-                          onTap: () {},
-                        ),
+                      AuthSubmitButton(
+                        icon: Icons.check_rounded,
+                        isEnabled: _canSubmit,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const VerifyCodeScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    child: Column(
+                      children: [
+                        _AuthAgreementCheckbox(
+                          value: _isPrivacyAccepted,
+                          text: '',
+                          hasPrivacyLink: true,
+                          onChanged: (value) {
+                            setState(() {
+                              _isPrivacyAccepted = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        _AuthAgreementCheckbox(
+                          value: _isPersonalDataAccepted,
+                          text: 'Я согласен на обработку персональных данных',
+                          onChanged: (value) {
+                            setState(() {
+                              _isPersonalDataAccepted = value;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 42),
 
                   AuthSwitchButton(
                     title: 'ВХОД',
@@ -128,6 +171,95 @@ class RegisterScreen extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _AuthAgreementCheckbox extends StatelessWidget {
+  final bool value;
+  final String text;
+  final bool hasPrivacyLink;
+  final ValueChanged<bool> onChanged;
+
+  const _AuthAgreementCheckbox({
+    required this.value,
+    required this.text,
+    required this.onChanged,
+    this.hasPrivacyLink = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              color: value ? AppColors.authBlack : Colors.transparent,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: value ? AppColors.authBlack : AppColors.authGold,
+                width: 1.6,
+              ),
+            ),
+            child: value
+                ? const Icon(
+                    Icons.check_rounded,
+                    color: AppColors.authGold,
+                    size: 17,
+                  )
+                : null,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: hasPrivacyLink
+                ? Wrap(
+                    children: [
+                      const Text(
+                        'Я согласен с ',
+                        style: TextStyle(
+                          color: AppColors.authSubtitle,
+                          fontSize: 13,
+                          height: 1.2,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const PrivacyPolicyScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'политикой конфиденциальности',
+                          style: TextStyle(
+                            color: AppColors.authGold,
+                            fontSize: 13,
+                            height: 1.2,
+                            decoration: TextDecoration.underline,
+                            decorationColor: AppColors.authGold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(
+                    text,
+                    style: const TextStyle(
+                      color: AppColors.authSubtitle,
+                      fontSize: 13,
+                      height: 1.2,
+                    ),
+                  ),
+          ),
+        ],
       ),
     );
   }
