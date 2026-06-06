@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-import 'package:flutter/material.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
 import 'package:VayToday/features/add_company/presentation/screens/add_company_screen.dart';
 

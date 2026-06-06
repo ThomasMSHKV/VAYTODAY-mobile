@@ -1,157 +1,223 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
-import 'package:VayToday/features/companies/data/companies_mock_data.dart';
+import 'package:VayToday/features/companies/data/companies_repository.dart';
 import 'package:VayToday/features/companies/domain/models/company_model.dart';
+import 'package:VayToday/features/companies/presentation/cubit/companies_cubit.dart';
+import 'package:VayToday/features/companies/presentation/cubit/companies_state.dart';
 import 'package:VayToday/features/companies/presentation/widgets/city_filter_chip.dart';
 import 'package:VayToday/features/companies/presentation/widgets/companies_search_field.dart';
 import 'package:VayToday/features/companies/presentation/widgets/company_list_card.dart';
 
-class CompaniesScreen extends StatefulWidget {
+class CompaniesScreen extends StatelessWidget {
   final String subcategoryTitle;
+  final int serviceId;
 
-  const CompaniesScreen({super.key, required this.subcategoryTitle});
+  const CompaniesScreen({
+    super.key,
+    required this.subcategoryTitle,
+    required this.serviceId,
+  });
 
   @override
-  State<CompaniesScreen> createState() => _CompaniesScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) =>
+          CompaniesCubit(CompaniesRepository())
+            ..loadCompaniesByServiceId(serviceId),
+      child: _CompaniesView(
+        subcategoryTitle: subcategoryTitle,
+        serviceId: serviceId,
+      ),
+    );
+  }
 }
 
-class _CompaniesScreenState extends State<CompaniesScreen> {
-  final List<String> _cities = const [
-    'Все города',
-    'Назрань',
-    'Магас',
-    'Сунжа',
-  ];
+class _CompaniesView extends StatefulWidget {
+  final String subcategoryTitle;
+  final int serviceId;
 
-  String _selectedCity = 'Все города';
+  const _CompaniesView({
+    required this.subcategoryTitle,
+    required this.serviceId,
+  });
+
+  @override
+  State<_CompaniesView> createState() => _CompaniesViewState();
+}
+
+class _CompaniesViewState extends State<_CompaniesView> {
   String _searchQuery = '';
+  int? _selectedCityId;
 
-  List<CompanyModel> get _filteredCompanies {
-    return CompaniesMockData.companies.where((company) {
-      final matchesCity =
-          _selectedCity == 'Все города' || company.city == _selectedCity;
+  List<CompanyModel> _filterCompanies(List<CompanyModel> companies) {
+    final query = _searchQuery.trim().toLowerCase();
 
-      final query = _searchQuery.toLowerCase();
-
+    return companies.where((company) {
       final matchesSearch =
+          query.isEmpty ||
           company.title.toLowerCase().contains(query) ||
           company.description.toLowerCase().contains(query) ||
-          company.city.toLowerCase().contains(query);
+          company.serviceName.toLowerCase().contains(query);
 
-      return matchesCity && matchesSearch;
+      final matchesCity =
+          _selectedCityId == null || company.cities.contains(_selectedCityId);
+
+      return matchesSearch && matchesCity;
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final companies = _filteredCompanies;
-
     return Scaffold(
       backgroundColor: AppColors.screenBackground,
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 12),
+        child: BlocBuilder<CompaniesCubit, CompaniesState>(
+          builder: (context, state) {
+            if (state is CompaniesInitial || state is CompaniesLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: AppColors.categoryTitle,
+            if (state is CompaniesFailure) {
+              return Center(
+                child: Text(
+                  state.message,
+                  style: const TextStyle(
+                    color: AppColors.authText,
+                    fontSize: 16,
+                  ),
                 ),
-              ),
-            ),
+              );
+            }
 
-            const SizedBox(height: 24),
+            final loaded = state as CompaniesLoaded;
+            final companies = _filterCompanies(loaded.companies);
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
-              child: Text(
-                widget.subcategoryTitle,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Colors.black,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 22),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: CompaniesSearchField(
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value;
-                        });
-                      },
+            return RefreshIndicator(
+              onRefresh: () => context
+                  .read<CompaniesCubit>()
+                  .loadCompaniesByServiceId(widget.serviceId),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 12, 20, 0),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: AppColors.categoryTitle,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 54,
-                    height: 54,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: Icon(
-                      Icons.tune_rounded,
-                      color: AppColors.categoryTitle,
-                      size: 30,
+
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(30, 24, 30, 0),
+                      child: Text(
+                        widget.subcategoryTitle,
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(
+                              color: Colors.black,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
                     ),
                   ),
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 22)),
+
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: CompaniesSearchField(
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 18)),
+
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 34,
+                      child: ListView.separated(
+                        clipBehavior: Clip.none,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        scrollDirection: Axis.horizontal,
+                        itemCount: loaded.cities.length + 1,
+                        separatorBuilder: (_, __) => const SizedBox(width: 10),
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            return CityFilterChip(
+                              title: 'Все',
+                              isSelected: _selectedCityId == null,
+                              onTap: () {
+                                setState(() {
+                                  _selectedCityId = null;
+                                });
+                              },
+                            );
+                          }
+
+                          final city = loaded.cities[index - 1];
+
+                          return CityFilterChip(
+                            title: city.name,
+                            isSelected: _selectedCityId == city.id,
+                            onTap: () {
+                              setState(() {
+                                _selectedCityId = city.id;
+                              });
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 22)),
+
+                  if (companies.isEmpty)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Text(
+                          'Компании не найдены',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      sliver: SliverList.separated(
+                        itemCount: companies.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          return CompanyListCard(company: companies[index]);
+                        },
+                      ),
+                    ),
                 ],
               ),
-            ),
-
-            const SizedBox(height: 16),
-
-            SizedBox(
-              height: 56,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                scrollDirection: Axis.horizontal,
-                itemCount: _cities.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final city = _cities[index];
-
-                  return CityFilterChip(
-                    title: city,
-                    isSelected: _selectedCity == city,
-                    onTap: () {
-                      setState(() {
-                        _selectedCity = city;
-                      });
-                    },
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 2),
-
-            Expanded(
-              child: companies.isEmpty
-                  ? const Center(child: Text('Компании не найдены'))
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                      itemCount: companies.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        return CompanyListCard(company: companies[index]);
-                      },
-                    ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

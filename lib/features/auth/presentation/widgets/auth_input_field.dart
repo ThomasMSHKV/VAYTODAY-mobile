@@ -6,6 +6,9 @@ class AuthInputField extends StatefulWidget {
   final IconData icon;
   final bool obscureText;
   final bool showEye;
+  final TextEditingController? controller;
+  final TextInputType? keyboardType;
+  final ValueChanged<String>? onChanged;
 
   const AuthInputField({
     super.key,
@@ -13,6 +16,9 @@ class AuthInputField extends StatefulWidget {
     required this.icon,
     this.obscureText = false,
     this.showEye = false,
+    this.controller,
+    this.keyboardType,
+    this.onChanged,
   });
 
   @override
@@ -46,7 +52,9 @@ class _AuthInputFieldState extends State<AuthInputField> {
 
           Expanded(
             child: TextField(
+              controller: widget.controller,
               obscureText: _isObscured,
+              keyboardType: widget.keyboardType,
               cursorColor: AppColors.authGold,
               style: const TextStyle(
                 color: AppColors.authText,
@@ -70,6 +78,7 @@ class _AuthInputFieldState extends State<AuthInputField> {
                       fontWeight: FontWeight.w400,
                     ),
                   ),
+              onChanged: widget.onChanged,
             ),
           ),
 

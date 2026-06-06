@@ -1,22 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
+import 'package:VayToday/features/auth/data/auth_repository.dart';
+import 'package:VayToday/features/auth/data/auth_session_storage.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_background.dart';
 
 class VerifyCodeScreen extends StatefulWidget {
-  const VerifyCodeScreen({super.key});
+  final String email;
+  final String? resetPassword;
+  final VoidCallback? onVerified;
+
+  const VerifyCodeScreen({
+    super.key,
+    required this.email,
+    this.resetPassword,
+    this.onVerified,
+  });
 
   @override
   State<VerifyCodeScreen> createState() => _VerifyCodeScreenState();
 }
 
 class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
+  static const int _codeLength = 6;
+
   final List<TextEditingController> _controllers = List.generate(
-    4,
+    _codeLength,
     (_) => TextEditingController(),
   );
 
-  final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
+  final List<FocusNode> _focusNodes = List.generate(
+    _codeLength,
+    (_) => FocusNode(),
+  );
+
+  final _authRepository = AuthRepository();
+  final _sessionStorage = AuthSessionStorage();
+  bool _isLoading = false;
+
+  bool get _isPasswordReset => widget.resetPassword != null;
 
   @override
   void dispose() {
@@ -34,11 +56,18 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
   String get _code => _controllers.map((e) => e.text).join();
 
   void _onCodeChanged(String value, int index) {
-    if (value.isNotEmpty && index < 3) {
+    if (value.length > 1) {
+      _controllers[index].text = value.substring(value.length - 1);
+      _controllers[index].selection = TextSelection.fromPosition(
+        const TextPosition(offset: 1),
+      );
+    }
+
+    if (value.isNotEmpty && index < _codeLength - 1) {
       _focusNodes[index + 1].requestFocus();
     }
 
-    if (_code.length == 4) {
+    if (_code.length == _codeLength) {
       FocusScope.of(context).unfocus();
     }
 
@@ -51,15 +80,56 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     }
   }
 
-  void _confirmCode() {
-    if (_code.length != 4) return;
+  Future<void> _confirmCode() async {
+    if (_code.length != _codeLength || _isLoading) return;
 
-    // TODO: тут потом будет проверка кода через API / Cubit
+    setState(() => _isLoading = true);
+
+    try {
+      if (_isPasswordReset) {
+        await _authRepository.resetPassword(
+          email: widget.email,
+          code: _code,
+          password: widget.resetPassword!,
+        );
+      } else {
+        await _authRepository.verifyEmail(
+          email: widget.email,
+          verificationCode: _code,
+        );
+        await _sessionStorage.saveAuthorizedUser(widget.email);
+      }
+
+      if (!mounted) return;
+
+      if (!_isPasswordReset) {
+        widget.onVerified?.call();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isPasswordReset ? 'Пароль изменен' : 'Почта подтверждена',
+          ),
+        ),
+      );
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Неверный код')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isButtonEnabled = _code.length == 4;
+    final isButtonEnabled = _code.length == _codeLength && !_isLoading;
 
     return AuthBackground(
       child: LayoutBuilder(
@@ -74,7 +144,6 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
               child: Column(
                 children: [
                   const SizedBox(height: 150),
-
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 46),
                     child: Text(
@@ -88,14 +157,12 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 90),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(4, (index) {
+                    children: List.generate(_codeLength, (index) {
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: _CodeCircleField(
                           controller: _controllers[index],
                           focusNode: _focusNodes[index],
@@ -105,9 +172,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                       );
                     }),
                   ),
-
                   const SizedBox(height: 80),
-
                   GestureDetector(
                     onTap: isButtonEnabled ? _confirmCode : null,
                     child: AnimatedOpacity(
@@ -121,9 +186,9 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                           color: AppColors.authBlack,
                           borderRadius: BorderRadius.circular(26),
                         ),
-                        child: const Text(
-                          'подтвердить',
-                          style: TextStyle(
+                        child: Text(
+                          _isLoading ? 'проверка' : 'подтвердить',
+                          style: const TextStyle(
                             color: AppColors.authGold,
                             fontSize: 26,
                             fontWeight: FontWeight.w800,
@@ -159,8 +224,8 @@ class _CodeCircleField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 62,
-      height: 62,
+      width: 50,
+      height: 50,
       child: KeyboardListener(
         focusNode: FocusNode(),
         onKeyEvent: (event) {
@@ -179,7 +244,7 @@ class _CodeCircleField extends StatelessWidget {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           style: const TextStyle(
             color: AppColors.authGold,
-            fontSize: 25,
+            fontSize: 22,
             fontWeight: FontWeight.w800,
           ),
           decoration: const InputDecoration(
