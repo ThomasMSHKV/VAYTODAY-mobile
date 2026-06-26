@@ -57,6 +57,19 @@ class ProductModel {
     );
   }
 
+  ProductModel copyWith({List<ProductImageModel>? images}) {
+    return ProductModel(
+      id: id,
+      companyId: companyId,
+      title: title,
+      description: description,
+      price: price,
+      oldPrice: oldPrice,
+      isOnDiscountAd: isOnDiscountAd,
+      images: images ?? this.images,
+    );
+  }
+
   String get imageUrl {
     if (images.isEmpty) return '';
     return images.first.imageUrl;

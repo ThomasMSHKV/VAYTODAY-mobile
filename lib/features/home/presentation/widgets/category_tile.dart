@@ -1,4 +1,5 @@
 import 'package:VayToday/features/home/domain/models/home_category.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class CategoryTile extends StatelessWidget {
@@ -42,10 +43,12 @@ class CategoryTile extends StatelessWidget {
               ),
               child: SizedBox(
                 width: double.infinity,
-                child: Image.network(
-                  category.imageUrl,
+                child: CachedNetworkImage(
+                  imageUrl: category.imageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) {
+                  placeholder: (context, url) =>
+                      const ColoredBox(color: Color(0xFFECEDE3)),
+                  errorWidget: (context, url, error) {
                     return Container(
                       color: Colors.grey.shade300,
                       alignment: Alignment.center,

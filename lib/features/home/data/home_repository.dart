@@ -1,16 +1,16 @@
 import 'package:VayToday/core/network/api_client.dart';
+import 'package:VayToday/features/categories/data/categories_repository.dart';
 import 'package:VayToday/features/companies/domain/models/company_model.dart';
 import 'package:VayToday/features/home/domain/models/home_category.dart';
 
 class HomeRepository {
+  final CategoriesRepository _categoriesRepository;
+
+  HomeRepository({CategoriesRepository? categoriesRepository})
+    : _categoriesRepository = categoriesRepository ?? CategoriesRepository();
+
   Future<List<HomeCategory>> getCategories() async {
-    final response = await ApiClient.dio.get('categories');
-
-    final results = response.data['results'] as List? ?? [];
-
-    return results
-        .map((e) => HomeCategory.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return _categoriesRepository.getCategories();
   }
 
   Future<List<CompanyModel>> getRecommendedCompanies() async {

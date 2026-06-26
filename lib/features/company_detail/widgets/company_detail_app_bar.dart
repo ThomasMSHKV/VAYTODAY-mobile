@@ -7,7 +7,7 @@ class CompanyDetailAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
-      expandedHeight: 120,
+      expandedHeight: 86,
       backgroundColor: AppColors.categoriesHeader,
       automaticallyImplyLeading: false,
       pinned: false,

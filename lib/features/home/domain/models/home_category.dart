@@ -17,6 +17,10 @@ class HomeService {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {'id': id, 'name': name, 'category': categoryId};
+  }
+
   static int _parseCategoryId(dynamic value) {
     if (value is int) return value;
     if (value is String) return int.tryParse(value) ?? 0;
@@ -57,5 +61,16 @@ class HomeCategory {
           .map((e) => HomeService.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': title,
+      'short_name': shortName,
+      'icon': imageUrl,
+      'sort_order': sortOrder,
+      'services': services.map((service) => service.toJson()).toList(),
+    };
   }
 }

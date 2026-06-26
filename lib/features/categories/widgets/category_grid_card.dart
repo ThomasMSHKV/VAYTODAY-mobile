@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
 import 'package:VayToday/features/categories/presentation/screens/subcategories_screen.dart';
@@ -54,10 +55,12 @@ class CategoryGridCard extends StatelessWidget {
                 right: 0,
                 top: 48,
                 bottom: -8,
-                child: Image.network(
-                  category.imageUrl,
+                child: CachedNetworkImage(
+                  imageUrl: category.imageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) {
+                  placeholder: (context, url) =>
+                      Container(color: AppColors.categoryCardBackground),
+                  errorWidget: (context, url, error) {
                     return Container(
                       color: Colors.grey.shade300,
                       alignment: Alignment.center,

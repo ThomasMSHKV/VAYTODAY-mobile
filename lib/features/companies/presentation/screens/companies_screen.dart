@@ -102,7 +102,7 @@ class _CompaniesViewState extends State<_CompaniesView> {
                 slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 12, 20, 0),
+                      padding: const EdgeInsets.fromLTRB(10, 12, 22, 0),
                       child: Row(
                         children: [
                           IconButton(
@@ -112,27 +112,26 @@ class _CompaniesViewState extends State<_CompaniesView> {
                               color: AppColors.categoryTitle,
                             ),
                           ),
+                          const SizedBox(width: 2),
+                          Expanded(
+                            child: Text(
+                              widget.subcategoryTitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    color: Colors.black,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
 
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(30, 24, 30, 0),
-                      child: Text(
-                        widget.subcategoryTitle,
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(
-                              color: Colors.black,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                            ),
-                      ),
-                    ),
-                  ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 22)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 18)),
 
                   SliverToBoxAdapter(
                     child: Padding(
@@ -157,7 +156,7 @@ class _CompaniesViewState extends State<_CompaniesView> {
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         scrollDirection: Axis.horizontal,
                         itemCount: loaded.cities.length + 1,
-                        separatorBuilder: (_, __) => const SizedBox(width: 10),
+                        separatorBuilder: (_, _) => const SizedBox(width: 10),
                         itemBuilder: (context, index) {
                           if (index == 0) {
                             return CityFilterChip(
@@ -205,10 +204,10 @@ class _CompaniesViewState extends State<_CompaniesView> {
                     )
                   else
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                       sliver: SliverList.separated(
                         itemCount: companies.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        separatorBuilder: (_, _) => const SizedBox(height: 16),
                         itemBuilder: (context, index) {
                           return CompanyListCard(company: companies[index]);
                         },

@@ -59,7 +59,7 @@ class SubcategoryGridCard extends StatelessWidget {
               child: Image.network(
                 imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) {
+                errorBuilder: (context, error, stackTrace) {
                   return Container(
                     color: Colors.grey.shade300,
                     alignment: Alignment.center,

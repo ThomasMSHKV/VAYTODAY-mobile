@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
 
+class AddCompanyDropdownOption {
+  final String value;
+  final String label;
+
+  const AddCompanyDropdownOption({required this.value, required this.label});
+}
+
 class AddCompanyDropdownField extends StatelessWidget {
   final String label;
   final String hintText;
   final IconData icon;
-  final List<String> items;
+  final List<AddCompanyDropdownOption> items;
   final String? value;
   final ValueChanged<String?>? onChanged;
   const AddCompanyDropdownField({
@@ -63,9 +70,9 @@ class AddCompanyDropdownField extends StatelessWidget {
                     ),
                     items: items.map((item) {
                       return DropdownMenuItem<String>(
-                        value: item,
+                        value: item.value,
                         child: Text(
-                          item,
+                          item.label,
                           style: const TextStyle(
                             color: AppColors.authText,
                             fontSize: 16,

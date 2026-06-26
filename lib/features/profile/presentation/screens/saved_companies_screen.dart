@@ -45,7 +45,7 @@ class _SavedCompaniesView extends StatelessWidget {
                 slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 8, 20, 0),
+                      padding: const EdgeInsets.fromLTRB(8, 8, 22, 0),
                       child: Row(
                         children: [
                           IconButton(
@@ -56,24 +56,25 @@ class _SavedCompaniesView extends StatelessWidget {
                               size: 22,
                             ),
                           ),
+                          const SizedBox(width: 2),
+                          Expanded(
+                            child: Text(
+                              'Сохраненные компании',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    color: Colors.black,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 18, 24, 20),
-                      child: Text(
-                        'Сохраненные компании',
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(
-                              color: Colors.black,
-                              fontSize: 21,
-                              fontWeight: FontWeight.w800,
-                            ),
-                      ),
-                    ),
-                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
                   if (state is SavedCompaniesInitial ||
                       state is SavedCompaniesLoading)
                     const SliverFillRemaining(
@@ -118,10 +119,10 @@ class _SavedCompaniesView extends StatelessWidget {
                     )
                   else
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 22),
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 22),
                       sliver: SliverList.separated(
                         itemCount: companies.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           return CompanyListCard(
                             company: companies[index],

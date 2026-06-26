@@ -5,8 +5,17 @@ import 'package:VayToday/features/reviews/presentation/widgets/review_stars.dart
 
 class ReviewCard extends StatelessWidget {
   final CompanyReviewModel review;
+  final bool canReply;
+  final bool isUpdatingReply;
+  final VoidCallback? onReplyTap;
 
-  const ReviewCard({super.key, required this.review});
+  const ReviewCard({
+    super.key,
+    required this.review,
+    this.canReply = false,
+    this.isUpdatingReply = false,
+    this.onReplyTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,29 +38,19 @@ class ReviewCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Алексей Чанов',
+                      review.displayUsername,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: AppColors.authText,
                         fontSize: 19,
                         fontWeight: FontWeight.w800,
                         height: 1.05,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      '+7 (927) ***-**-**',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        height: 1.2,
                       ),
                     ),
                   ],
@@ -100,6 +99,26 @@ class ReviewCard extends StatelessWidget {
                 fontSize: 15,
                 height: 1.3,
                 fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+          if (canReply) ...[
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: isUpdatingReply ? null : onReplyTap,
+              icon: isUpdatingReply
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      review.reply.isEmpty
+                          ? Icons.reply_rounded
+                          : Icons.edit_outlined,
+                    ),
+              label: Text(
+                review.reply.isEmpty ? 'Ответить' : 'Редактировать ответ',
               ),
             ),
           ],

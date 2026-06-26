@@ -12,12 +12,18 @@ class CompanyImageModel {
       imageUrl: json['image']?.toString() ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {'id': id, 'image': imageUrl};
+  }
 }
 
 class CompanyModel {
   final int id;
   final String title;
   final String description;
+  final String email;
+  final String phones;
   final double rating;
   final bool recommendated;
   final bool isActive;
@@ -26,6 +32,7 @@ class CompanyModel {
   final List<CompanyImageModel> images;
   final List<int> cities;
   final int? address;
+  final String manualAddress;
   final String addressName;
   final String addressLatitude;
   final String addressLongitude;
@@ -38,6 +45,8 @@ class CompanyModel {
     required this.id,
     required this.title,
     required this.description,
+    required this.email,
+    required this.phones,
     required this.rating,
     required this.recommendated,
     required this.isActive,
@@ -46,6 +55,7 @@ class CompanyModel {
     required this.images,
     required this.cities,
     required this.address,
+    required this.manualAddress,
     required this.addressName,
     required this.addressLatitude,
     required this.addressLongitude,
@@ -56,16 +66,18 @@ class CompanyModel {
   });
 
   factory CompanyModel.fromJson(Map<String, dynamic> json) {
-    final servicesJson = json['services'] as List? ?? [];
+    final servicesJson = _parseServices(json);
     final similarServicesJson = json['similar_services'] as List? ?? [];
     final imagesJson = json['images'] as List? ?? [];
     final citiesJson = json['cities'] as List? ?? [];
-    final addressJson = json['address'];
+    final addressJson = json['address'] ?? json['address_field'];
 
     return CompanyModel(
       id: _parseInt(json['id']),
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      phones: json['phones']?.toString() ?? json['phone']?.toString() ?? '',
       rating: double.tryParse('${json['rating'] ?? '0'}') ?? 0,
       recommendated: json['recommendated'] == true,
       isActive: json['is_active'] == true,
@@ -87,13 +99,72 @@ class CompanyModel {
           .cast<int>()
           .toList(),
       address: _parseRelationId(addressJson),
+      manualAddress: _parseManualAddress(json),
       addressName: _parseAddressField(addressJson, 'name'),
       addressLatitude: _parseAddressField(addressJson, 'latitude'),
       addressLongitude: _parseAddressField(addressJson, 'longitude'),
-      cityName: _parseCityName(citiesJson),
+      cityName: json['city_name']?.toString() ?? _parseCityName(citiesJson),
       workStart: json['work_start']?.toString() ?? '',
       workEnd: json['work_end']?.toString() ?? '',
       visits: _parseInt(json['visits']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'email': email,
+      'phones': phones,
+      'rating': rating,
+      'recommendated': recommendated,
+      'is_active': isActive,
+      'services': services.map((service) => service.toJson()).toList(),
+      'similar_services': similarServices
+          .map((service) => service.toJson())
+          .toList(),
+      'images': images.map((image) => image.toJson()).toList(),
+      'cities': cities,
+      'address': address,
+      'address_text': manualAddress,
+      'address_name': addressName,
+      'latitude': addressLatitude,
+      'longitude': addressLongitude,
+      'city_name': cityName,
+      'work_start': workStart,
+      'work_end': workEnd,
+      'visits': visits,
+    };
+  }
+
+  CompanyModel copyWith({
+    String? phones,
+    String? manualAddress,
+    List<CompanyImageModel>? images,
+  }) {
+    return CompanyModel(
+      id: id,
+      title: title,
+      description: description,
+      email: email,
+      phones: phones ?? this.phones,
+      rating: rating,
+      recommendated: recommendated,
+      isActive: isActive,
+      services: services,
+      similarServices: similarServices,
+      images: images ?? this.images,
+      cities: cities,
+      address: address,
+      manualAddress: manualAddress ?? this.manualAddress,
+      addressName: addressName,
+      addressLatitude: addressLatitude,
+      addressLongitude: addressLongitude,
+      cityName: cityName,
+      workStart: workStart,
+      workEnd: workEnd,
+      visits: visits,
     );
   }
 
@@ -130,6 +201,7 @@ class CompanyModel {
   }
 
   String get displayAddress {
+    if (manualAddress.trim().isNotEmpty) return manualAddress.trim();
     if (addressName.trim().isNotEmpty) return addressName.trim();
     if (cityName.trim().isNotEmpty) return cityName.trim();
     return 'Адрес пока не указан';
@@ -144,12 +216,27 @@ class CompanyModel {
       return 'Время не указано';
     }
 
-    return '$workStart - $workEnd';
+    return '${_formatTime(workStart)} - ${_formatTime(workEnd)}';
+  }
+
+  static String _formatTime(String value) {
+    final match = RegExp(r'^(\d{1,2}:\d{2})(?::\d{2})$').firstMatch(value);
+    return match?.group(1) ?? value;
   }
 
   static int _parseInt(dynamic value) {
     if (value is int) return value;
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static List<dynamic> _parseServices(Map<String, dynamic> json) {
+    final services = json['services'];
+    if (services is List) return services;
+
+    final service = json['service'];
+    if (service is Map) return [service];
+
+    return const [];
   }
 
   static int? _parseRelationId(dynamic value) {
@@ -182,6 +269,30 @@ class CompanyModel {
       if (first is Map<String, dynamic>) {
         return first[field]?.toString() ?? '';
       }
+    }
+
+    return '';
+  }
+
+  static String _parseManualAddress(Map<String, dynamic> json) {
+    for (final key in [
+      'address_text',
+      'address_name',
+      'manual_address',
+      'custom_address',
+    ]) {
+      final value = json[key]?.toString().trim();
+      if (value != null && value.isNotEmpty) return value;
+    }
+
+    final addressField = json['address_field'];
+    if (addressField is String && int.tryParse(addressField) == null) {
+      return addressField.trim();
+    }
+
+    final address = json['address'];
+    if (address is String && int.tryParse(address) == null) {
+      return address.trim();
     }
 
     return '';

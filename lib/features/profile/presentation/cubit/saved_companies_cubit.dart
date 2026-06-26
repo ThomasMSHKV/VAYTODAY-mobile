@@ -8,12 +8,19 @@ class SavedCompaniesCubit extends Cubit<SavedCompaniesState> {
   SavedCompaniesCubit(this._repository) : super(const SavedCompaniesInitial());
 
   Future<void> loadSavedCompanies() async {
-    emit(const SavedCompaniesLoading());
+    final cachedCompanies = await _repository.getCachedFavoriteCompanies();
+    if (cachedCompanies.isEmpty) {
+      emit(const SavedCompaniesLoading());
+    } else {
+      emit(SavedCompaniesLoaded(cachedCompanies));
+    }
 
     try {
       final companies = await _repository.getFavoriteCompanies();
       emit(SavedCompaniesLoaded(companies));
     } catch (_) {
+      if (cachedCompanies.isNotEmpty) return;
+
       emit(
         const SavedCompaniesFailure(
           'Не удалось загрузить сохраненные компании',

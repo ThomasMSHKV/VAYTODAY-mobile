@@ -7,28 +7,37 @@ class AuthSessionStorage {
   static const _accessTokenKey = 'auth_access_token';
   static const _refreshTokenKey = 'auth_refresh_token';
 
-  Future<void> saveAuthorizedUser(
-    String email, {
-    AuthTokens? tokens,
-  }) async {
+  Future<void> saveAuthorizedUser(String email, {AuthTokens? tokens}) async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.setBool(_isAuthorizedKey, true);
     await preferences.setString(_emailKey, email);
 
     if (tokens != null) {
-      await preferences.setString(_accessTokenKey, tokens.access);
-      await preferences.setString(_refreshTokenKey, tokens.refresh);
+      await _saveTokens(preferences, tokens);
     }
+  }
+
+  Future<void> saveTokens(AuthTokens tokens) async {
+    final preferences = await SharedPreferences.getInstance();
+    await _saveTokens(preferences, tokens);
   }
 
   Future<bool> isAuthorized() async {
     final preferences = await SharedPreferences.getInstance();
-    return preferences.getBool(_isAuthorizedKey) ?? false;
+    final isAuthorized = preferences.getBool(_isAuthorizedKey) ?? false;
+    final accessToken = preferences.getString(_accessTokenKey) ?? '';
+
+    return isAuthorized && accessToken.isNotEmpty;
   }
 
   Future<String?> getAccessToken() async {
     final preferences = await SharedPreferences.getInstance();
     return preferences.getString(_accessTokenKey);
+  }
+
+  Future<String?> getEmail() async {
+    final preferences = await SharedPreferences.getInstance();
+    return preferences.getString(_emailKey);
   }
 
   Future<String?> getRefreshToken() async {
@@ -42,5 +51,16 @@ class AuthSessionStorage {
     await preferences.remove(_emailKey);
     await preferences.remove(_accessTokenKey);
     await preferences.remove(_refreshTokenKey);
+  }
+
+  Future<void> _saveTokens(
+    SharedPreferences preferences,
+    AuthTokens tokens,
+  ) async {
+    await preferences.setString(_accessTokenKey, tokens.access);
+
+    if (tokens.refresh.isNotEmpty) {
+      await preferences.setString(_refreshTokenKey, tokens.refresh);
+    }
   }
 }

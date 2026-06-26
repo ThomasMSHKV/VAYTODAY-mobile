@@ -53,9 +53,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_canSubmit) return;
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Пароли не совпадают')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
       return;
     }
 
@@ -66,14 +66,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (!mounted) return;
 
-      Navigator.of(context).push(
+      final isAuthorized = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
           builder: (_) => VerifyCodeScreen(
             email: email,
+            password: password,
             onVerified: widget.onAuthorized,
           ),
         ),
       );
+
+      if (!mounted || isAuthorized != true) return;
+
+      Navigator.of(context).pop(true);
+    } on AuthApiException catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     } catch (_) {
       if (!mounted) return;
 

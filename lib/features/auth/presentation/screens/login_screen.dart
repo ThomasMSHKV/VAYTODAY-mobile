@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 import 'package:VayToday/core/theme/app_colors.dart';
 import 'package:VayToday/features/auth/data/auth_repository.dart';
 import 'package:VayToday/features/auth/data/auth_session_storage.dart';
@@ -51,22 +52,42 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      widget.onAuthorized?.call();
+      _finishAuthorization();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Вы авторизованы')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Вы авторизованы')));
     } catch (_) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Неверный mail или пароль')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Неверный mail или пароль')));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _finishAuthorization() {
+    widget.onAuthorized?.call();
+
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop(true);
+    }
+  }
+
+  Future<void> _openRegister() async {
+    final isAuthorized = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => RegisterScreen(onAuthorized: widget.onAuthorized),
+      ),
+    );
+
+    if (!mounted || isAuthorized != true) return;
+
+    _finishAuthorization();
   }
 
   @override
@@ -177,18 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  AuthSwitchButton(
-                    title: 'РЕГИСТРАЦИЯ',
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => RegisterScreen(
-                            onAuthorized: widget.onAuthorized,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                  AuthSwitchButton(title: 'РЕГИСТРАЦИЯ', onTap: _openRegister),
                   const SizedBox(height: 40),
                 ],
               ),

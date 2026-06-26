@@ -19,13 +19,43 @@ class ReviewsLoading extends ReviewsState {
 class ReviewsLoaded extends ReviewsState {
   final int count;
   final List<CompanyReviewModel> reviews;
+  final int userRating;
+  final bool isCompanyOwner;
+  final int? updatingReplyId;
+  final String replyError;
 
   const ReviewsLoaded({
     required this.count,
     required this.reviews,
+    required this.userRating,
+    required this.isCompanyOwner,
+    this.updatingReplyId,
+    this.replyError = '',
   });
 
+  ReviewsLoaded copyWith({
+    List<CompanyReviewModel>? reviews,
+    int? updatingReplyId,
+    bool clearUpdatingReply = false,
+    String replyError = '',
+  }) {
+    return ReviewsLoaded(
+      count: count,
+      reviews: reviews ?? this.reviews,
+      userRating: userRating,
+      isCompanyOwner: isCompanyOwner,
+      updatingReplyId: clearUpdatingReply
+          ? null
+          : updatingReplyId ?? this.updatingReplyId,
+      replyError: replyError,
+    );
+  }
+
   int get reviewsCount => count > 0 ? count : reviews.length;
+
+  int get repliesCount {
+    return reviews.where((review) => review.reply.trim().isNotEmpty).length;
+  }
 
   double get averageRating {
     if (reviews.isEmpty) return 0;
@@ -34,7 +64,14 @@ class ReviewsLoaded extends ReviewsState {
   }
 
   @override
-  List<Object?> get props => [count, reviews];
+  List<Object?> get props => [
+    count,
+    reviews,
+    userRating,
+    isCompanyOwner,
+    updatingReplyId,
+    replyError,
+  ];
 }
 
 class ReviewsFailure extends ReviewsState {

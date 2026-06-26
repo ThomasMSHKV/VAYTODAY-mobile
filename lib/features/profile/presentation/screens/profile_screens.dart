@@ -34,21 +34,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  void _retryProfile() {
+    setState(() {
+      _profileFuture = _profileRepository.getUserProfile();
+    });
+  }
+
   Future<void> _logout() async {
     await _sessionStorage.clear();
     _refreshAuthorization();
   }
 
-  void _openOtherScreen() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const OtherScreen()),
-    );
+  Future<void> _openOtherScreen() async {
+    final accountDeleted = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => const OtherScreen()));
+
+    if (!mounted || accountDeleted != true) return;
+    _refreshAuthorization();
   }
 
   void _openSavedCompanies() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const SavedCompaniesScreen()),
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const SavedCompaniesScreen()));
+  }
+
+  Future<void> _openEditUsernameDialog(AuthUserModel? user) async {
+    final updatedUser = await showDialog<AuthUserModel?>(
+      context: context,
+      builder: (_) => _EditUsernameDialog(
+        initialUsername: _editableUsername(user),
+        profileRepository: _profileRepository,
+      ),
     );
+
+    if (!mounted || updatedUser == null) return;
+
+    setState(() {
+      _profileFuture = Future.value(updatedUser);
+    });
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Имя обновлено')));
   }
 
   @override
@@ -68,6 +97,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: FutureBuilder<AuthUserModel?>(
               future: _profileFuture ??= _profileRepository.getUserProfile(),
               builder: (context, profileSnapshot) {
+                if (profileSnapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (profileSnapshot.hasError || profileSnapshot.data == null) {
+                  return _ProfileLoadError(
+                    message: profileSnapshot.error is ProfileApiException
+                        ? (profileSnapshot.error! as ProfileApiException)
+                              .message
+                        : 'Не удалось загрузить профиль',
+                    onRetry: _retryProfile,
+                  );
+                }
+
                 return SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
                   child: Column(
@@ -79,9 +123,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Text(
                               'Профиль',
                               textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
+                              style: Theme.of(context).textTheme.headlineMedium
                                   ?.copyWith(
                                     color: Colors.black,
                                     fontSize: 24,
@@ -102,15 +144,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 36),
                       const _ProfileAvatar(),
                       const SizedBox(height: 22),
-                      Text(
-                        _displayName(profileSnapshot.data),
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(
-                              color: Colors.black,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                            ),
+                      GestureDetector(
+                        onTap: () =>
+                            _openEditUsernameDialog(profileSnapshot.data),
+                        child: Text(
+                          _displayName(profileSnapshot.data),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
+                                color: Colors.black,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Text(
@@ -140,15 +186,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         backgroundColor: const Color(0xFFFFEFE5),
                         onTap: _logout,
                       ),
-                      const SizedBox(height: 18),
-                      _ProfileActionTile(
-                        title: 'Удалить аккаунт',
-                        icon: Icons.delete_outline_rounded,
-                        iconColor: const Color(0xFFFF1717),
-                        textColor: const Color(0xFFFF1717),
-                        backgroundColor: const Color(0xFFFFEAED),
-                        onTap: () {},
-                      ),
                     ],
                   ),
                 );
@@ -168,6 +205,168 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return username;
+  }
+
+  String _editableUsername(AuthUserModel? user) {
+    final username = user?.username.trim() ?? '';
+
+    if (username.isEmpty || username.contains('@')) {
+      return '';
+    }
+
+    return username;
+  }
+}
+
+class _ProfileLoadError extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ProfileLoadError({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off_rounded,
+              color: AppColors.textSecondary,
+              size: 42,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: 180,
+              child: ElevatedButton(
+                onPressed: onRetry,
+                child: const Text('Повторить'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EditUsernameDialog extends StatefulWidget {
+  final String initialUsername;
+  final ProfileRepository profileRepository;
+
+  const _EditUsernameDialog({
+    required this.initialUsername,
+    required this.profileRepository,
+  });
+
+  @override
+  State<_EditUsernameDialog> createState() => _EditUsernameDialogState();
+}
+
+class _EditUsernameDialogState extends State<_EditUsernameDialog> {
+  late final TextEditingController _usernameController;
+  bool _isSaving = false;
+
+  bool get _canSave {
+    return _usernameController.text.trim().isNotEmpty && !_isSaving;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _usernameController = TextEditingController(text: widget.initialUsername);
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveUsername() async {
+    if (!_canSave) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      final updatedUser = await widget.profileRepository.updateUsername(
+        _usernameController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      Navigator.of(context).pop(updatedUser);
+    } on ProfileApiException catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+      setState(() => _isSaving = false);
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Не удалось обновить имя')));
+      setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      title: const Text(
+        'Изменить имя',
+        style: TextStyle(
+          color: AppColors.authText,
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      content: TextField(
+        controller: _usernameController,
+        autofocus: true,
+        textInputAction: TextInputAction.done,
+        maxLength: 32,
+        decoration: const InputDecoration(
+          hintText: 'Ваше имя',
+          counterText: '',
+        ),
+        onChanged: (_) => setState(() {}),
+        onSubmitted: (_) => _saveUsername(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Отмена'),
+        ),
+        ElevatedButton(
+          onPressed: _canSave ? _saveUsername : null,
+          child: _isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Сохранить'),
+        ),
+      ],
+    );
   }
 }
 
@@ -247,19 +446,19 @@ class _ProfileActionTile extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Ink(
-          height: 68,
-          padding: const EdgeInsets.symmetric(horizontal: 22),
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
-              Icon(icon, color: iconColor, size: 26),
-              const SizedBox(width: 20),
+              Icon(icon, color: iconColor, size: 22),
+              const SizedBox(width: 14),
               Expanded(
                 child: Text(
                   title,
@@ -267,16 +466,12 @@ class _ProfileActionTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: iconColor,
-                size: 20,
-              ),
+              Icon(Icons.arrow_forward_ios_rounded, color: iconColor, size: 16),
             ],
           ),
         ),

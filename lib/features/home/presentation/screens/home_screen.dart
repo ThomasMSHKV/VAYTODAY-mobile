@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:VayToday/core/theme/app_colors.dart';
 import 'package:VayToday/features/categories/presentation/screens/subcategories_screen.dart';
 import 'package:VayToday/features/company_detail/presentation/screens/company_detail_screen.dart';

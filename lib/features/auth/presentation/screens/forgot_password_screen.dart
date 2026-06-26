@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 import 'package:VayToday/core/theme/app_colors.dart';
 import 'package:VayToday/features/auth/data/auth_repository.dart';
 import 'package:VayToday/features/auth/presentation/screens/verify_code_screen.dart';
@@ -22,6 +23,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   bool _isLoading = false;
 
+  bool get _canSubmit {
+    return _emailController.text.trim().isNotEmpty &&
+        _passwordController.text.trim().isNotEmpty &&
+        _confirmPasswordController.text.trim().isNotEmpty &&
+        !_isLoading;
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -30,48 +38,53 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  bool get _canSubmit {
-    return _emailController.text.trim().isNotEmpty &&
-        _passwordController.text.trim().isNotEmpty &&
-        _confirmPasswordController.text.trim().isNotEmpty &&
-        !_isLoading;
-  }
+  Future<void> _sendCodeAndOpenVerification() async {
+    if (!_canSubmit) return;
 
-  Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (!_canSubmit) return;
+    if (!_isValidEmail(email)) {
+      _showMessage('Введите корректную почту');
+      return;
+    }
+
+    if (password.length < 8) {
+      _showMessage('Пароль должен быть не короче 8 символов');
+      return;
+    }
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Пароли не совпадают')),
-      );
+      _showMessage('Пароли не совпадают');
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      await _authRepository.resendVerificationCode(email);
+      await _authRepository.sendPasswordResetCode(email);
 
       if (!mounted) return;
 
-      Navigator.of(context).push(
+      final isChanged = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
-          builder: (_) => VerifyCodeScreen(
-            email: email,
-            resetPassword: password,
-          ),
+          builder: (_) =>
+              VerifyCodeScreen(email: email, resetPassword: password),
         ),
       );
-    } catch (_) {
+
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось отправить код')),
-      );
+      if (isChanged == true) {
+        Navigator.of(context).pop(true);
+      }
+    } on AuthApiException catch (error) {
+      if (!mounted) return;
+      _showMessage(error.message);
+    } catch (_) {
+      if (!mounted) return;
+      _showMessage('Не удалось отправить код');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -79,8 +92,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
+  bool _isValidEmail(String value) {
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value);
+  }
+
   void _refreshSubmitState(String _) {
     setState(() {});
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -97,7 +120,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: Column(
                 children: [
-                  const SizedBox(height: 110),
+                  const SizedBox(height: 96),
                   SvgPicture.asset(
                     'assets/icons/logo.svg',
                     width: 90,
@@ -115,7 +138,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   const SizedBox(height: 2),
                   const Text(
-                    'Введите mail и новый пароль',
+                    'Введите почту и новый пароль',
                     style: TextStyle(
                       color: AppColors.authSubtitle,
                       fontSize: 12,
@@ -156,7 +179,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             const SizedBox(height: 28),
                             AuthInputField(
                               controller: _passwordController,
-                              hintText: 'new password',
+                              hintText: 'новый пароль',
                               icon: Icons.lock_outline_rounded,
                               obscureText: true,
                               showEye: true,
@@ -165,7 +188,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             const SizedBox(height: 28),
                             AuthInputField(
                               controller: _confirmPasswordController,
-                              hintText: 'confirm password',
+                              hintText: 'повторите пароль',
                               icon: Icons.lock_outline_rounded,
                               obscureText: true,
                               showEye: true,
@@ -177,13 +200,27 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       AuthSubmitButton(
                         icon: _isLoading
                             ? Icons.hourglass_empty_rounded
-                            : Icons.check_rounded,
+                            : Icons.arrow_forward_rounded,
                         isEnabled: _canSubmit,
-                        onTap: _resetPassword,
+                        onTap: _sendCodeAndOpenVerification,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 42),
+                  const SizedBox(height: 22),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 42),
+                    child: Text(
+                      'Мы отправим 6-значный код на указанную почту',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.authSubtitle,
+                        fontSize: 13,
+                        height: 1.35,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 34),
                 ],
               ),
             ),

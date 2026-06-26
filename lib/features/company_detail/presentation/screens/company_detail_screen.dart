@@ -90,11 +90,11 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
         ),
       );
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        _isFavoriteRequestInProgress = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isFavoriteRequestInProgress = false;
+        });
+      }
     }
   }
 
@@ -107,8 +107,16 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
         imageUrl: product.imageUrl,
         subtitle: product.description,
         price: product.price.isEmpty ? null : product.price,
+        oldPrice: product.oldPrice.isEmpty ? null : product.oldPrice,
       );
     }).toList();
+  }
+
+  void _showProductDetails(ProductModel product) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => _ProductDetailsDialog(product: product),
+    );
   }
 
   @override
@@ -117,6 +125,8 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
     final imageUrls = company.imageUrls.isEmpty
         ? [company.imageUrl]
         : company.imageUrls;
+    final bottomSafeArea = MediaQuery.paddingOf(context).bottom;
+    final bottomContentPadding = bottomSafeArea + 74;
 
     return Scaffold(
       backgroundColor: AppColors.categoriesHeader,
@@ -135,7 +145,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 44, 20, 130),
+                padding: EdgeInsets.fromLTRB(20, 28, 20, bottomContentPadding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -180,8 +190,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                           onReviewsTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    ReviewsScreen(company: company),
+                                builder: (_) => ReviewsScreen(company: company),
                               ),
                             );
                           },
@@ -201,14 +210,15 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                     FutureBuilder<List<ProductModel>>(
                       future: _productsFuture,
                       builder: (context, snapshot) {
+                        final products = snapshot.data ?? const [];
                         final assortmentItems = _mapProductsToAssortment(
-                          snapshot.data ?? const [],
+                          products,
                         );
 
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return const SizedBox(
-                            height: 155,
+                            height: 170,
                             child: Center(child: CircularProgressIndicator()),
                           );
                         }
@@ -224,16 +234,18 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                         }
 
                         return SizedBox(
-                          height: 155,
+                          height: 170,
                           child: ListView.separated(
                             clipBehavior: Clip.none,
                             scrollDirection: Axis.horizontal,
                             itemCount: assortmentItems.length,
-                            separatorBuilder: (_, __) =>
+                            separatorBuilder: (_, _) =>
                                 const SizedBox(width: 10),
                             itemBuilder: (context, index) {
                               return AssortmentCard(
                                 item: assortmentItems[index],
+                                onTap: () =>
+                                    _showProductDetails(products[index]),
                               );
                             },
                           ),
@@ -266,12 +278,132 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                       icon: Icons.location_on_outlined,
                       title: company.displayAddress,
                     ),
+                    if (company.phones.trim().isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      CompanyInfoRow(
+                        icon: Icons.phone_outlined,
+                        title: company.phones.trim(),
+                      ),
+                    ],
                   ],
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProductDetailsDialog extends StatelessWidget {
+  final ProductModel product;
+
+  const _ProductDetailsDialog({required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: AppColors.white,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 28),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: SizedBox(
+                  height: 210,
+                  width: double.infinity,
+                  child: product.imageUrl.isEmpty
+                      ? Container(
+                          color: AppColors.detailLightGreen,
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.image_outlined,
+                            color: AppColors.detailTextGreen,
+                            size: 48,
+                          ),
+                        )
+                      : Image.network(
+                          product.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: AppColors.detailLightGreen,
+                              alignment: Alignment.center,
+                              child: const Icon(
+                                Icons.image_outlined,
+                                color: AppColors.detailTextGreen,
+                                size: 48,
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                product.title,
+                style: const TextStyle(
+                  color: AppColors.detailTextGreen,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  if (product.price.trim().isNotEmpty)
+                    Text(
+                      product.price.trim(),
+                      style: const TextStyle(
+                        color: AppColors.accent,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  if (product.oldPrice.trim().isNotEmpty) ...[
+                    const SizedBox(width: 10),
+                    Text(
+                      product.oldPrice.trim(),
+                      style: const TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              if (product.description.trim().isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(
+                  product.description.trim(),
+                  style: const TextStyle(
+                    color: AppColors.categoryTitle,
+                    fontSize: 16,
+                    height: 1.35,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 18),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Закрыть'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
