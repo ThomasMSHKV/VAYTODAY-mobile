@@ -76,7 +76,7 @@ class AssortmentCard extends StatelessWidget {
                             ],
                           ],
                         ),
-                        const SizedBox(height: 1),
+                        const SizedBox(height: 2),
                         Text(
                           item.title,
                           maxLines: 1,
