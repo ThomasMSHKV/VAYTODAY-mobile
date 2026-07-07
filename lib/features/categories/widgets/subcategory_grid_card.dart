@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
-import 'package:VayToday/features/categories/domain/models/subcategory_model.dart';
 import 'package:VayToday/features/companies/presentation/screens/companies_screen.dart';
+import 'package:VayToday/features/home/domain/models/home_category.dart';
 
 class SubcategoryGridCard extends StatelessWidget {
-  final SubcategoryModel subcategory;
+  final HomeService service;
+  final String imageUrl;
 
-  const SubcategoryGridCard({super.key, required this.subcategory});
+  const SubcategoryGridCard({
+    super.key,
+    required this.service,
+    required this.imageUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,8 +20,10 @@ class SubcategoryGridCard extends StatelessWidget {
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) =>
-                CompaniesScreen(subcategoryTitle: subcategory.title),
+            builder: (_) => CompaniesScreen(
+              subcategoryTitle: service.name,
+              serviceId: service.id,
+            ),
           ),
         );
       },
@@ -33,7 +40,7 @@ class SubcategoryGridCard extends StatelessWidget {
               left: 8,
               right: 8,
               child: Text(
-                subcategory.title,
+                service.name,
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -50,9 +57,9 @@ class SubcategoryGridCard extends StatelessWidget {
               top: 48,
               bottom: -8,
               child: Image.network(
-                subcategory.imageUrl,
+                imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) {
+                errorBuilder: (context, error, stackTrace) {
                   return Container(
                     color: Colors.grey.shade300,
                     alignment: Alignment.center,

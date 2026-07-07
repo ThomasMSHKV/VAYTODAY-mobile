@@ -3,8 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/nav_item.dart';
 import '../cubit/navigation_cubit.dart';
-import '../cubit/navigation_state.dart'; 
-
+import '../cubit/navigation_state.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   const CustomBottomNavBar({super.key});
@@ -14,10 +13,8 @@ class CustomBottomNavBar extends StatelessWidget {
     return BlocBuilder<NavigationCubit, NavigationState>(
       builder: (context, state) {
         return Container(
-          height: 80,
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-          ),
+          height: 64,
+          decoration: const BoxDecoration(color: AppColors.surface),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: NavItem.values.map((item) {
@@ -51,7 +48,7 @@ class _NavBarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Размер иконки: активная больше, неактивная меньше
-    final iconSize = isActive ? 26.0 : 24.0;
+    final iconSize = isActive ? 24.0 : 22.0;
 
     return GestureDetector(
       onTap: onTap,
@@ -59,14 +56,12 @@ class _NavBarItem extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
-        width: isActive ? 64 : 56,
-        height: isActive ? 64 : 56,
+        width: isActive ? 48 : 44,
+        height: isActive ? 48 : 44,
         decoration: BoxDecoration(
           // Квадратный фон с округлёнными углами для активного элемента
-          color: isActive 
-              ? AppColors.navActiveBackground 
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(25),
+          color: isActive ? AppColors.navActiveBackground : Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Icon(
           isActive ? item.activeIcon : item.icon,

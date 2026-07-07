@@ -38,6 +38,8 @@ class AppColors {
   static const Color cityFilterActive = Color(0xFF566959);
   static const Color cityFilterInactive = Color(0xFFFFFFFF);
   static const Color starYellow = Color(0xFFFFB800);
+  static const Color moderationPending = Color(0xFFEA8A1A);
+  static const Color moderationApproved = Color(0xFF2E8B57);
 
   /// ===== Ошибки =====
   static const Color error = Color(0xFFEF4444);

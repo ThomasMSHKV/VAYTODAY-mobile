@@ -6,6 +6,8 @@ class AddCompanyTextField extends StatelessWidget {
   final String hintText;
   final IconData icon;
   final int maxLines;
+  final TextEditingController? controller;
+  final TextInputType? keyboardType;
 
   const AddCompanyTextField({
     super.key,
@@ -13,6 +15,8 @@ class AddCompanyTextField extends StatelessWidget {
     required this.hintText,
     required this.icon,
     this.maxLines = 1,
+    this.controller,
+    this.keyboardType,
   });
 
   @override
@@ -51,6 +55,8 @@ class AddCompanyTextField extends StatelessWidget {
               const SizedBox(width: 14),
               Expanded(
                 child: TextField(
+                  controller: controller,
+                  keyboardType: keyboardType,
                   maxLines: maxLines,
                   cursorColor: AppColors.authGold,
                   decoration: InputDecoration(

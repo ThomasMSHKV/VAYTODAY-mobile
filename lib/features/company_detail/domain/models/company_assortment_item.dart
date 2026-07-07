@@ -3,11 +3,13 @@ class CompanyAssortmentItem {
   final String imageUrl;
   final String subtitle;
   final String? price;
+  final String? oldPrice;
 
   const CompanyAssortmentItem({
     required this.title,
     required this.imageUrl,
     required this.subtitle,
     this.price,
+    this.oldPrice,
   });
 }

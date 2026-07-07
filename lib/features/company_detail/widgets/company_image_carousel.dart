@@ -1,5 +1,8 @@
 import 'dart:async';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
 
 class CompanyImageCarousel extends StatefulWidget {
@@ -20,7 +23,6 @@ class CompanyImageCarousel extends StatefulWidget {
 
 class _CompanyImageCarouselState extends State<CompanyImageCarousel> {
   static const int _initialPage = 1000;
-  static const double _slideGap = 6;
 
   late final PageController _pageController;
   Timer? _timer;
@@ -29,20 +31,34 @@ class _CompanyImageCarouselState extends State<CompanyImageCarousel> {
   @override
   void initState() {
     super.initState();
-
-    _pageController = PageController(initialPage: _initialPage);
-
+    _pageController = PageController(
+      initialPage: widget.imageUrls.length > 1 ? _initialPage : 0,
+    );
     _startAutoScroll();
+  }
+
+  @override
+  void didUpdateWidget(covariant CompanyImageCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageUrls.length != widget.imageUrls.length) {
+      _currentPage = 0;
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(
+          widget.imageUrls.length > 1 ? _initialPage : 0,
+        );
+      }
+      _startAutoScroll();
+    }
   }
 
   void _startAutoScroll() {
     _timer?.cancel();
+    if (widget.imageUrls.length <= 1) return;
 
     _timer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!mounted || widget.imageUrls.isEmpty) return;
+      if (!mounted || widget.imageUrls.length <= 1) return;
 
       final nextPage = (_pageController.page?.round() ?? _initialPage) + 1;
-
       _pageController.animateToPage(
         nextPage,
         duration: const Duration(milliseconds: 450),
@@ -71,7 +87,7 @@ class _CompanyImageCarouselState extends State<CompanyImageCarousel> {
         Stack(
           children: [
             SizedBox(
-              height: 240,
+              height: 204,
               width: double.infinity,
               child: NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
@@ -87,46 +103,44 @@ class _CompanyImageCarouselState extends State<CompanyImageCarousel> {
                 },
                 child: PageView.builder(
                   controller: _pageController,
-                  clipBehavior: Clip.none,
-                  itemBuilder: (context, index) {
-                    final imageIndex = index % widget.imageUrls.length;
-
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: _slideGap,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: Image.network(
-                          widget.imageUrls[imageIndex],
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) {
-                            return Container(
-                              color: Colors.grey.shade300,
-                              alignment: Alignment.center,
-                              child: const Icon(Icons.image_outlined, size: 44),
-                            );
-                          },
-                        ),
-                      ),
+                  itemCount: widget.imageUrls.length > 1
+                      ? null
+                      : widget.imageUrls.length,
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  onPageChanged: (index) {
+                    setState(
+                      () => _currentPage = index % widget.imageUrls.length,
                     );
                   },
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentPage = index % widget.imageUrls.length;
-                    });
+                  itemBuilder: (context, index) {
+                    final imageUrl =
+                        widget.imageUrls[index % widget.imageUrls.length];
+
+                    return CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      fadeInDuration: Duration.zero,
+                      placeholder: (context, url) => const _ImagePlaceholder(),
+                      errorWidget: (context, url, error) =>
+                          const _ImagePlaceholder(),
+                    );
                   },
                 ),
               ),
             ),
             Positioned(
               top: 14,
-              right: 14,
+              right: 20,
               child: GestureDetector(
                 onTap: widget.onFavoriteTap,
                 child: Icon(
-                  Icons.favorite_rounded,
+                  widget.isFavorite
+                      ? Icons.bookmark_rounded
+                      : Icons.bookmark_border_rounded,
                   color: widget.isFavorite
                       ? AppColors.favoriteYellow
                       : Colors.white,
@@ -136,27 +150,42 @@ class _CompanyImageCarouselState extends State<CompanyImageCarousel> {
             ),
           ],
         ),
-        const SizedBox(height: 14),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.imageUrls.length, (index) {
-            final isActive = index == _currentPage;
+        if (widget.imageUrls.length > 1) ...[
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(widget.imageUrls.length, (index) {
+              final isActive = index == _currentPage;
 
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: isActive ? 18 : 13,
-              height: 6,
-              decoration: BoxDecoration(
-                color: isActive
-                    ? AppColors.categoriesHeader
-                    : AppColors.divider.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(20),
-              ),
-            );
-          }),
-        ),
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: isActive ? 20 : 14,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? AppColors.authGold
+                      : AppColors.categoriesHeader.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              );
+            }),
+          ),
+        ],
       ],
+    );
+  }
+}
+
+class _ImagePlaceholder extends StatelessWidget {
+  const _ImagePlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: AppColors.detailLightGreen,
+      highlightColor: AppColors.favoriteYellow.withValues(alpha: 0.35),
+      child: Container(color: AppColors.detailLightGreen),
     );
   }
 }

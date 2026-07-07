@@ -5,12 +5,14 @@ class CompanyStatsRow extends StatelessWidget {
   final double rating;
   final int reviewsCount;
   final String workingTime;
+  final VoidCallback? onReviewsTap;
 
   const CompanyStatsRow({
     super.key,
     required this.rating,
     required this.reviewsCount,
     required this.workingTime,
+    this.onReviewsTap,
   });
 
   @override
@@ -27,7 +29,11 @@ class CompanyStatsRow extends StatelessWidget {
             size: 20,
           ),
         ),
-        _StatItem(title: reviewsCount.toString(), subtitle: 'Отзыва'),
+        GestureDetector(
+          onTap: onReviewsTap,
+          behavior: HitTestBehavior.opaque,
+          child: _StatItem(title: reviewsCount.toString(), subtitle: 'Отзывы'),
+        ),
         _StatItem(
           title: workingTime,
           subtitle: 'Время работы',

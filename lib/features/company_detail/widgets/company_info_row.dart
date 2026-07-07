@@ -22,7 +22,7 @@ class CompanyInfoRow extends StatelessWidget {
         ),
         const SizedBox(width: 14),
         Expanded(
-          child: Text(
+          child: SelectableText(
             title,
             style: const TextStyle(
               color: AppColors.detailTextGreen,

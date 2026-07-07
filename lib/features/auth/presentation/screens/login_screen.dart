@@ -1,14 +1,94 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 import 'package:VayToday/core/theme/app_colors.dart';
+import 'package:VayToday/features/auth/data/auth_repository.dart';
+import 'package:VayToday/features/auth/data/auth_session_storage.dart';
+import 'package:VayToday/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:VayToday/features/auth/presentation/screens/register_screen.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_background.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_input_field.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_submit_button.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_switch_button.dart';
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  final VoidCallback? onAuthorized;
+
+  const LoginScreen({super.key, this.onAuthorized});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _authRepository = AuthRepository();
+  final _sessionStorage = AuthSessionStorage();
+
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty || _isLoading) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final tokens = await _authRepository.login(
+        email: email,
+        password: password,
+      );
+      await _sessionStorage.saveAuthorizedUser(email, tokens: tokens);
+
+      if (!mounted) return;
+
+      _finishAuthorization();
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Вы авторизованы')));
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Неверный mail или пароль')));
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _finishAuthorization() {
+    widget.onAuthorized?.call();
+
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop(true);
+    }
+  }
+
+  Future<void> _openRegister() async {
+    final isAuthorized = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => RegisterScreen(onAuthorized: widget.onAuthorized),
+      ),
+    );
+
+    if (!mounted || isAuthorized != true) return;
+
+    _finishAuthorization();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,15 +105,12 @@ class LoginScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 110),
-
                   SvgPicture.asset(
                     'assets/icons/logo.svg',
                     width: 90,
                     height: 90,
                   ),
-
                   const SizedBox(height: 10),
-
                   const Text(
                     'ВХОД',
                     style: TextStyle(
@@ -43,9 +120,7 @@ class LoginScreen extends StatelessWidget {
                       letterSpacing: 1,
                     ),
                   ),
-
                   const SizedBox(height: 2),
-
                   const Text(
                     'Войдите в свой аккаунт',
                     style: TextStyle(
@@ -54,9 +129,7 @@ class LoginScreen extends StatelessWidget {
                       fontWeight: FontWeight.w400,
                     ),
                   ),
-
                   const SizedBox(height: 30),
-
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
@@ -78,14 +151,17 @@ class LoginScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: const Column(
+                        child: Column(
                           children: [
                             AuthInputField(
+                              controller: _emailController,
                               hintText: 'mail',
                               icon: Icons.alternate_email_rounded,
+                              keyboardType: TextInputType.emailAddress,
                             ),
-                            SizedBox(height: 28),
+                            const SizedBox(height: 28),
                             AuthInputField(
+                              controller: _passwordController,
                               hintText: 'password',
                               icon: Icons.lock_outline_rounded,
                               obscureText: true,
@@ -94,43 +170,35 @@ class LoginScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          top: 70,
-                          left: 270,
-                        ), // Настройте величину отступа
-                        child: AuthSubmitButton(
-                          icon: Icons.check_rounded,
-                          onTap: () {},
-                        ),
+                      AuthSubmitButton(
+                        top: 70,
+                        icon: _isLoading
+                            ? Icons.hourglass_empty_rounded
+                            : Icons.check_rounded,
+                        onTap: _login,
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 28),
-
-                  const Text(
-                    'Забыли пароль ?',
-                    style: TextStyle(
-                      color: AppColors.authText,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  AuthSwitchButton(
-                    title: 'РЕГИСТРАЦИЯ',
+                  GestureDetector(
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => const RegisterScreen(),
+                          builder: (_) => const ForgotPasswordScreen(),
                         ),
                       );
                     },
+                    child: const Text(
+                      'Забыли пароль ?',
+                      style: TextStyle(
+                        color: AppColors.authText,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                   ),
-
+                  const SizedBox(height: 20),
+                  AuthSwitchButton(title: 'РЕГИСТРАЦИЯ', onTap: _openRegister),
                   const SizedBox(height: 40),
                 ],
               ),

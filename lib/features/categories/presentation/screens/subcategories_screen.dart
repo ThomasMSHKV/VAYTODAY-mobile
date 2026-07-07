@@ -1,17 +1,22 @@
-import 'package:VayToday/features/categories/widgets/subcategory_grid_card.dart';
 import 'package:flutter/material.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
-import 'package:VayToday/features/categories/data/subcategories_mock_data.dart';
+import 'package:VayToday/features/categories/widgets/subcategory_grid_card.dart';
+import 'package:VayToday/features/home/domain/models/home_category.dart';
 
 class SubcategoriesScreen extends StatelessWidget {
   final String categoryTitle;
+  final String categoryImageUrl;
+  final List<HomeService> services;
 
-  const SubcategoriesScreen({super.key, required this.categoryTitle});
+  const SubcategoriesScreen({
+    super.key,
+    required this.categoryTitle,
+    required this.categoryImageUrl,
+    required this.services,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final subcategories = SubcategoriesMockData.getByCategory(categoryTitle);
-
     return Scaffold(
       backgroundColor: AppColors.screenBackground,
       appBar: AppBar(
@@ -27,19 +32,29 @@ class SubcategoriesScreen extends StatelessWidget {
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
-        itemCount: subcategories.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.82,
-        ),
-        itemBuilder: (context, index) {
-          return SubcategoryGridCard(subcategory: subcategories[index]);
-        },
-      ),
+      body: services.isEmpty
+          ? const Center(
+              child: Text(
+                'Подкатегории пока не добавлены',
+                style: TextStyle(color: AppColors.categoryTitle, fontSize: 16),
+              ),
+            )
+          : GridView.builder(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+              itemCount: services.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.82,
+              ),
+              itemBuilder: (context, index) {
+                return SubcategoryGridCard(
+                  service: services[index],
+                  imageUrl: categoryImageUrl,
+                );
+              },
+            ),
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:VayToday/features/home/domain/models/home_category.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:VayToday/core/theme/app_colors.dart';
 
 class CategoryTile extends StatelessWidget {
   final HomeCategory category;
@@ -9,51 +11,46 @@ class CategoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 120,
       decoration: BoxDecoration(
-        color: const Color(0xFFECEDE3),
-        borderRadius: BorderRadius.circular(22),
+        color: AppColors.categoryCardBackground,
+        borderRadius: BorderRadius.circular(20),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // Заголовок — с отступами
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+          Positioned(
+            top: 12,
+            left: 7,
+            right: 7,
             child: Text(
               category.title,
+              textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF66675F),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: AppColors.categoryTitle,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
-
-          // Картинка — на всю ширину, без отступов
-          Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(22),
-                bottomRight: Radius.circular(22),
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: Image.network(
-                  category.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) {
-                    return Container(
-                      color: Colors.grey.shade300,
-                      alignment: Alignment.center,
-                      child: const Icon(Icons.image_outlined, size: 36),
-                    );
-                  },
-                ),
-              ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 40,
+            bottom: -6,
+            child: CachedNetworkImage(
+              imageUrl: category.imageUrl,
+              fit: BoxFit.cover,
+              placeholder: (context, url) =>
+                  Container(color: AppColors.categoryCardBackground),
+              errorWidget: (context, url, error) {
+                return Container(
+                  color: Colors.grey.shade300,
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.image_outlined, size: 30),
+                );
+              },
             ),
           ),
         ],

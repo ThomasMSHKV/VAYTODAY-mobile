@@ -5,19 +5,23 @@ class AuthSubmitButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
   final bool isEnabled;
+  final double top;
+  final double right;
 
   const AuthSubmitButton({
     super.key,
     required this.icon,
     required this.onTap,
     this.isEnabled = true,
+    this.top = 100,
+    this.right = 25,
   });
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      right: 25,
-      top: 100,
+      right: right,
+      top: top,
       child: GestureDetector(
         onTap: isEnabled ? onTap : null,
         child: AnimatedOpacity(

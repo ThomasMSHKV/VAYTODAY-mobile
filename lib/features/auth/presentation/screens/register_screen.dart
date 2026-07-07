@@ -1,25 +1,110 @@
-import 'package:VayToday/features/other/presentation/screens/privacy_policy_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:VayToday/core/theme/app_colors.dart';
+import 'package:VayToday/features/auth/data/auth_repository.dart';
 import 'package:VayToday/features/auth/presentation/screens/verify_code_screen.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_background.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_input_field.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_submit_button.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_switch_button.dart';
+import 'package:VayToday/core/utils/privacy_policy_launcher.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:VayToday/core/theme/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final VoidCallback? onAuthorized;
+
+  const RegisterScreen({super.key, this.onAuthorized});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _authRepository = AuthRepository();
+
   bool _isPrivacyAccepted = false;
   bool _isPersonalDataAccepted = false;
+  bool _isLoading = false;
 
-  bool get _canSubmit => _isPrivacyAccepted && _isPersonalDataAccepted;
+  bool get _canSubmit {
+    return _emailController.text.trim().isNotEmpty &&
+        _passwordController.text.trim().isNotEmpty &&
+        _confirmPasswordController.text.trim().isNotEmpty &&
+        _isPrivacyAccepted &&
+        _isPersonalDataAccepted &&
+        !_isLoading;
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _register() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    if (!_canSubmit) return;
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('РџР°СЂРѕР»Рё РЅРµ СЃРѕРІРїР°РґР°СЋС‚')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _authRepository.register(email: email, password: password);
+
+      if (!mounted) return;
+
+      final isAuthorized = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => VerifyCodeScreen(
+            email: email,
+            password: password,
+            onVerified: widget.onAuthorized,
+          ),
+        ),
+      );
+
+      if (!mounted || isAuthorized != true) return;
+
+      Navigator.of(context).pop(true);
+    } on AuthApiException catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _refreshSubmitState(String _) {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,17 +121,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 children: [
                   const SizedBox(height: 110),
-
                   SvgPicture.asset(
                     'assets/icons/logo.svg',
                     width: 90,
                     height: 90,
                   ),
-
                   const SizedBox(height: 10),
-
                   const Text(
-                    'РЕГИСТРАЦИЯ',
+                    'Р Р•Р“РРЎРўР РђР¦РРЇ',
                     style: TextStyle(
                       color: AppColors.authText,
                       fontSize: 34,
@@ -54,20 +136,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       letterSpacing: 1,
                     ),
                   ),
-
                   const SizedBox(height: 2),
-
                   const Text(
-                    'Создайте свой аккаунт',
+                    'РЎРѕР·РґР°Р№С‚Рµ СЃРІРѕР№ Р°РєРєР°СѓРЅС‚',
                     style: TextStyle(
                       color: AppColors.authSubtitle,
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
-
                   const SizedBox(height: 30),
-
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
@@ -89,45 +167,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ],
                         ),
-                        child: const Column(
+                        child: Column(
                           children: [
                             AuthInputField(
+                              controller: _emailController,
                               hintText: 'mail',
                               icon: Icons.alternate_email_rounded,
+                              keyboardType: TextInputType.emailAddress,
+                              onChanged: _refreshSubmitState,
                             ),
-                            SizedBox(height: 28),
+                            const SizedBox(height: 28),
                             AuthInputField(
+                              controller: _passwordController,
                               hintText: 'password',
                               icon: Icons.lock_outline_rounded,
                               obscureText: true,
                               showEye: true,
+                              onChanged: _refreshSubmitState,
                             ),
-                            SizedBox(height: 28),
+                            const SizedBox(height: 28),
                             AuthInputField(
+                              controller: _confirmPasswordController,
                               hintText: 'confirm password',
                               icon: Icons.lock_outline_rounded,
                               obscureText: true,
                               showEye: true,
+                              onChanged: _refreshSubmitState,
                             ),
                           ],
                         ),
                       ),
                       AuthSubmitButton(
-                        icon: Icons.check_rounded,
+                        icon: _isLoading
+                            ? Icons.hourglass_empty_rounded
+                            : Icons.check_rounded,
                         isEnabled: _canSubmit,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const VerifyCodeScreen(),
-                            ),
-                          );
-                        },
+                        onTap: _register,
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 24),
-
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
                     child: Column(
@@ -145,7 +224,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 10),
                         _AuthAgreementCheckbox(
                           value: _isPersonalDataAccepted,
-                          text: 'Я согласен на обработку персональных данных',
+                          text:
+                              'РЇ СЃРѕРіР»Р°СЃРµРЅ РЅР° РѕР±СЂР°Р±РѕС‚РєСѓ РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С…',
                           onChanged: (value) {
                             setState(() {
                               _isPersonalDataAccepted = value;
@@ -155,16 +235,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 42),
-
                   AuthSwitchButton(
-                    title: 'ВХОД',
+                    title: 'Р’РҐРћР”',
                     onTap: () {
                       Navigator.of(context).pop();
                     },
                   ),
-
                   const SizedBox(height: 40),
                 ],
               ),
@@ -222,7 +299,7 @@ class _AuthAgreementCheckbox extends StatelessWidget {
                 ? Wrap(
                     children: [
                       const Text(
-                        'Я согласен с ',
+                        'РЇ СЃРѕРіР»Р°СЃРµРЅ СЃ ',
                         style: TextStyle(
                           color: AppColors.authSubtitle,
                           fontSize: 13,
@@ -230,15 +307,9 @@ class _AuthAgreementCheckbox extends StatelessWidget {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const PrivacyPolicyScreen(),
-                            ),
-                          );
-                        },
+                        onTap: () => openPrivacyPolicy(context),
                         child: const Text(
-                          'политикой конфиденциальности',
+                          'РїРѕР»РёС‚РёРєРѕР№ РєРѕРЅС„РёРґРµРЅС†РёР°Р»СЊРЅРѕСЃС‚Рё',
                           style: TextStyle(
                             color: AppColors.authGold,
                             fontSize: 13,

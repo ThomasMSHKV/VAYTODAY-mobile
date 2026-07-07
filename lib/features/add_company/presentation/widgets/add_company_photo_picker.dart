@@ -1,10 +1,19 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
 
 class AddCompanyPhotoPicker extends StatelessWidget {
   final VoidCallback onTap;
+  final List<String> imagePaths;
+  final ValueChanged<int>? onRemove;
 
-  const AddCompanyPhotoPicker({super.key, required this.onTap});
+  const AddCompanyPhotoPicker({
+    super.key,
+    required this.onTap,
+    this.imagePaths = const [],
+    this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +29,52 @@ class AddCompanyPhotoPicker extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
+        if (imagePaths.isNotEmpty) ...[
+          SizedBox(
+            height: 86,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: imagePaths.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                return Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.file(
+                        File(imagePaths[index]),
+                        width: 86,
+                        height: 86,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: onRemove == null ? null : () => onRemove!(index),
+                        child: Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.55),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            color: AppColors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         GestureDetector(
           onTap: onTap,
           child: Container(
