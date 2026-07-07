@@ -26,6 +26,19 @@ class AddressesRepository {
     return addresses;
   }
 
+  Future<AddressModel> createAddress(String name) async {
+    final response = await ApiClient.dio.post(
+      'address',
+      data: {'name': name.trim(), 'latitude': '', 'longitude': ''},
+    );
+
+    final address = AddressModel.fromJson(
+      Map<String, dynamic>.from(response.data as Map),
+    );
+    _cachedAddresses = [...?_cachedAddresses, address];
+    return address;
+  }
+
   Future<AddressModel?> getAddressById(int? addressId) async {
     if (addressId == null) return null;
 

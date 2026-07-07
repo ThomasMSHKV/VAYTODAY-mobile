@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:VayToday/core/network/api_client.dart';
 import 'package:VayToday/features/auth/data/auth_repository.dart';
 import 'package:VayToday/features/auth/data/auth_session_storage.dart';
+import 'package:VayToday/features/companies/domain/models/company_model.dart';
 import 'package:VayToday/features/products/domain/models/product_model.dart';
 
 class ProductApiException implements Exception {
@@ -44,6 +45,59 @@ class ProductsRepository {
     AuthRepository? authRepository,
   }) : _sessionStorage = sessionStorage ?? AuthSessionStorage(),
        _authRepository = authRepository ?? AuthRepository();
+
+  Future<List<ProductModel>> getProducts({
+    int limit = 100,
+    String query = '',
+    bool discountedOnly = false,
+  }) async {
+    const pageSize = 50;
+    const maxPages = 6;
+    final products = <ProductModel>[];
+    final cleanQuery = query.trim();
+
+    for (var page = 0; page < maxPages && products.length < limit; page++) {
+      final response = await ApiClient.dio.get(
+        'products',
+        queryParameters: {
+          if (discountedOnly) 'is_on_discount_ad': true,
+          if (cleanQuery.isNotEmpty) 'search': cleanQuery,
+          'limit': pageSize,
+          'offset': page * pageSize,
+        },
+      );
+
+      final results = response.data['results'] as List? ?? [];
+      final pageProducts = results
+          .whereType<Map<String, dynamic>>()
+          .map(ProductModel.fromJson)
+          .where((product) => !discountedOnly || product.isOnDiscountAd)
+          .toList();
+
+      products.addAll(pageProducts);
+
+      final hasNext = response.data is Map && response.data['next'] != null;
+      if (!hasNext || results.isEmpty) break;
+    }
+
+    products.shuffle();
+    final limitedProducts = products.take(limit).toList();
+    return Future.wait(limitedProducts.map(_attachImages));
+  }
+
+  Future<List<ProductModel>> getDiscountProducts({int limit = 20}) {
+    return getProducts(limit: limit, discountedOnly: true);
+  }
+
+  Future<CompanyModel> getProductCompany(int companyId) async {
+    final response = await ApiClient.dio.get('companies/$companyId');
+
+    if (response.data is Map<String, dynamic>) {
+      return CompanyModel.fromJson(response.data as Map<String, dynamic>);
+    }
+
+    throw const ProductApiException('Сервер вернул некорректный ответ');
+  }
 
   Future<List<ProductModel>> getProductsByCompanyId(int companyId) async {
     final response = await ApiClient.dio.get(

@@ -49,7 +49,7 @@ class ProductModel {
       description: json['description']?.toString() ?? '',
       price: json['price']?.toString() ?? '',
       oldPrice: json['old_price']?.toString() ?? '',
-      isOnDiscountAd: json['is_on_discount_ad'] == true,
+      isOnDiscountAd: _parseBool(json['is_on_discount_ad']),
       images: imagesJson
           .whereType<Map<String, dynamic>>()
           .map(ProductImageModel.fromJson)
@@ -79,6 +79,13 @@ class ProductModel {
 int _parseInt(dynamic value) {
   if (value is int) return value;
   return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+bool _parseBool(dynamic value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  final text = value?.toString().trim().toLowerCase() ?? '';
+  return text == 'true' || text == '1' || text == 'yes';
 }
 
 int _parseRelationId(dynamic value) {

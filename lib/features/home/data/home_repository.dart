@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:VayToday/core/network/api_client.dart';
 import 'package:VayToday/features/categories/data/categories_repository.dart';
 import 'package:VayToday/features/companies/domain/models/company_model.dart';
@@ -26,34 +28,51 @@ class HomeRepository {
   Future<List<CompanyModel>> getPopularCompanies() async {
     try {
       final companies = await _getCompaniesForPopularity();
-
-      companies.sort((first, second) {
-        if (first.visits != second.visits) {
-          return second.visits.compareTo(first.visits);
-        }
-
-        return second.rating.compareTo(first.rating);
-      });
-
-      final visitedCompanies = companies
-          .where((company) => company.visits > 0)
-          .take(10)
-          .toList();
-
-      if (visitedCompanies.isEmpty) {
+      if (companies.isEmpty) {
         return _getPopularCompaniesFallbackOrEmpty();
       }
 
-      return visitedCompanies;
+      final shuffled = [...companies]..shuffle(Random());
+      return shuffled.take(10).toList();
     } catch (_) {
       return _getPopularCompaniesFallbackOrEmpty();
     }
   }
 
+  Future<List<CompanyModel>> searchCompanies(String query) async {
+    final cleanQuery = query.trim();
+    if (cleanQuery.isEmpty) return const [];
+
+    final response = await ApiClient.dio.get(
+      'companies',
+      queryParameters: {'search': cleanQuery, 'limit': 20, 'offset': 0},
+    );
+
+    final results = response.data['results'] as List? ?? [];
+    final companies = results
+        .whereType<Map<String, dynamic>>()
+        .map(CompanyModel.fromJson)
+        .where((company) => company.isActive)
+        .toList();
+
+    companies.sort(_compareCompaniesByRatingAndReviews);
+    return companies;
+  }
+
+  int _compareCompaniesByRatingAndReviews(
+    CompanyModel first,
+    CompanyModel second,
+  ) {
+    final ratingComparison = second.rating.compareTo(first.rating);
+    if (ratingComparison != 0) return ratingComparison;
+
+    return second.reviewsCount.compareTo(first.reviewsCount);
+  }
+
   Future<List<CompanyModel>> _getCompaniesForPopularity() async {
     final response = await ApiClient.dio.get(
       'companies',
-      queryParameters: {'limit': 10, 'offset': 0},
+      queryParameters: {'limit': 100, 'offset': 0},
     );
 
     final results = response.data['results'] as List? ?? [];

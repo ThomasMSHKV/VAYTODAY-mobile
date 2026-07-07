@@ -22,7 +22,7 @@ class CreateCompanyRequest {
   final String title;
   final String description;
   final String phone;
-  final int serviceId;
+  final List<int> serviceIds;
   final int cityId;
   final int? addressId;
   final String addressText;
@@ -34,7 +34,7 @@ class CreateCompanyRequest {
     required this.title,
     required this.description,
     required this.phone,
-    required this.serviceId,
+    required this.serviceIds,
     required this.cityId,
     required this.addressId,
     required this.addressText,
@@ -49,6 +49,8 @@ class UpdateCompanyRequest {
   final String title;
   final String description;
   final String phone;
+  final int addressId;
+  final List<int> serviceIds;
   final String addressText;
   final String workStart;
   final String workEnd;
@@ -58,6 +60,8 @@ class UpdateCompanyRequest {
     required this.title,
     required this.description,
     required this.phone,
+    required this.addressId,
+    required this.serviceIds,
     required this.addressText,
     required this.workStart,
     required this.workEnd,
@@ -96,7 +100,7 @@ class CompanyManagementRepository {
     final data = Map<String, dynamic>.from(response.data as Map);
     var company = CompanyModel.fromJson(data);
     company = _applySubmittedContactFields(company, request);
-    if (!company.hasService(request.serviceId)) {
+    if (!request.serviceIds.every(company.hasService)) {
       company = await _retryServiceBinding(company, request, email);
       company = _applySubmittedContactFields(company, request);
     }
@@ -169,7 +173,7 @@ class CompanyManagementRepository {
       'email': email,
       'phones': request.phone.trim(),
       'recommendated': false,
-      'services': [request.serviceId],
+      'services': request.serviceIds,
       'text_from_admin': '',
       'cities': [request.cityId],
       if (request.addressId != null) 'address': request.addressId,
@@ -196,9 +200,8 @@ class CompanyManagementRepository {
       'recommendated': company.recommendated,
       'is_active': company.isActive,
       if (company.cities.isNotEmpty) 'cities': company.cities,
-      if (company.address != null) 'address': company.address,
-      if (request.addressText.trim().isNotEmpty)
-        'address_field': request.addressText.trim(),
+      'address': request.addressId,
+      'services': request.serviceIds,
       'text_from_admin': '',
       'work_start': request.workStart,
       'work_end': request.workEnd,
@@ -219,7 +222,7 @@ class CompanyManagementRepository {
       'email': email,
       'phones': request.phone.trim(),
       'recommendated': false,
-      'services': [request.serviceId],
+      'services': request.serviceIds,
       'text_from_admin': '',
       'cities': [request.cityId],
       if (request.addressId != null) 'address_field': request.addressId,

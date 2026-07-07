@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
 
 class CompanyDetailAppBar extends StatelessWidget {
-  const CompanyDetailAppBar({super.key});
+  final VoidCallback onShareTap;
+
+  const CompanyDetailAppBar({super.key, required this.onShareTap});
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +44,7 @@ class CompanyDetailAppBar extends StatelessWidget {
                   ],
                 ),
                 child: IconButton(
-                  onPressed: () {},
+                  onPressed: onShareTap,
                   icon: const Icon(
                     Icons.ios_share_rounded,
                     color: AppColors.detailTextGreen,

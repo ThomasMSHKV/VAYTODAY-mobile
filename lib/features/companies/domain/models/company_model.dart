@@ -40,6 +40,7 @@ class CompanyModel {
   final String workStart;
   final String workEnd;
   final int visits;
+  final int reviewsCount;
 
   const CompanyModel({
     required this.id,
@@ -63,6 +64,7 @@ class CompanyModel {
     required this.workStart,
     required this.workEnd,
     required this.visits,
+    required this.reviewsCount,
   });
 
   factory CompanyModel.fromJson(Map<String, dynamic> json) {
@@ -107,6 +109,7 @@ class CompanyModel {
       workStart: json['work_start']?.toString() ?? '',
       workEnd: json['work_end']?.toString() ?? '',
       visits: _parseInt(json['visits']),
+      reviewsCount: _parseReviewsCount(json),
     );
   }
 
@@ -135,6 +138,7 @@ class CompanyModel {
       'work_start': workStart,
       'work_end': workEnd,
       'visits': visits,
+      'reviews_count': reviewsCount,
     };
   }
 
@@ -165,6 +169,7 @@ class CompanyModel {
       workStart: workStart,
       workEnd: workEnd,
       visits: visits,
+      reviewsCount: reviewsCount,
     );
   }
 
@@ -181,22 +186,22 @@ class CompanyModel {
   }
 
   String get categoryName {
-    if (services.isEmpty) return 'Компания';
+    if (services.isEmpty) return 'Р С™Р С•Р СР С—Р В°Р Р…Р С‘РЎРЏ';
     return services.first.name;
   }
 
   String get servicesText {
-    if (services.isEmpty) return 'Услуги';
+    if (services.isEmpty) return 'Р Р€РЎРѓР В»РЎС“Р С–Р С‘';
     return services.map((service) => service.name).join(', ');
   }
 
   String get detailSubtitle {
-    if (services.isEmpty) return 'Компания';
+    if (services.isEmpty) return 'Р С™Р С•Р СР С—Р В°Р Р…Р С‘РЎРЏ';
     return servicesText;
   }
 
   String get serviceName {
-    if (services.isEmpty) return 'Услуга';
+    if (services.isEmpty) return 'Р Р€РЎРѓР В»РЎС“Р С–Р В°';
     return services.first.name;
   }
 
@@ -204,7 +209,7 @@ class CompanyModel {
     if (manualAddress.trim().isNotEmpty) return manualAddress.trim();
     if (addressName.trim().isNotEmpty) return addressName.trim();
     if (cityName.trim().isNotEmpty) return cityName.trim();
-    return 'Адрес пока не указан';
+    return 'Р С’Р Т‘РЎР‚Р ВµРЎРѓ Р С—Р С•Р С”Р В° Р Р…Р Вµ РЎС“Р С”Р В°Р В·Р В°Р Р…';
   }
 
   bool hasService(int serviceId) {
@@ -213,7 +218,7 @@ class CompanyModel {
 
   String get workingTime {
     if (workStart.isEmpty && workEnd.isEmpty) {
-      return 'Время не указано';
+      return 'Р вЂ™РЎР‚Р ВµР СРЎРЏ Р Р…Р Вµ РЎС“Р С”Р В°Р В·Р В°Р Р…Р С•';
     }
 
     return '${_formatTime(workStart)} - ${_formatTime(workEnd)}';
@@ -227,6 +232,23 @@ class CompanyModel {
   static int _parseInt(dynamic value) {
     if (value is int) return value;
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static int _parseReviewsCount(Map<String, dynamic> json) {
+    for (final key in [
+      'reviews_count',
+      'reviewsCount',
+      'review_count',
+      'comments_count',
+    ]) {
+      final count = _parseInt(json[key]);
+      if (count > 0) return count;
+    }
+
+    final reviews = json['reviews'];
+    if (reviews is List) return reviews.length;
+
+    return 0;
   }
 
   static List<dynamic> _parseServices(Map<String, dynamic> json) {

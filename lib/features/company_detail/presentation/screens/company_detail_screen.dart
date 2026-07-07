@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
 import 'package:VayToday/features/company_visits/data/company_visits_repository.dart';
 import 'package:VayToday/features/companies/domain/models/company_model.dart';
 import 'package:VayToday/features/company_detail/domain/models/company_assortment_item.dart';
 import 'package:VayToday/features/company_detail/widgets/assortment_card.dart';
 import 'package:VayToday/features/company_detail/widgets/company_detail_app_bar.dart';
-import 'package:VayToday/features/company_detail/widgets/company_detail_bottom_bar.dart';
 import 'package:VayToday/features/company_detail/widgets/company_image_carousel.dart';
 import 'package:VayToday/features/company_detail/widgets/company_info_row.dart';
 import 'package:VayToday/features/company_detail/widgets/company_stats_row.dart';
@@ -119,24 +119,29 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
     );
   }
 
+  Future<void> _shareCompanyLink() async {
+    final link = 'https://vaytoday.ru/company/${widget.company.id}';
+    await Clipboard.setData(ClipboardData(text: link));
+  }
+
   @override
   Widget build(BuildContext context) {
     final company = widget.company;
     final imageUrls = company.imageUrls.isEmpty
         ? [company.imageUrl]
         : company.imageUrls;
-    final bottomSafeArea = MediaQuery.paddingOf(context).bottom;
-    final bottomContentPadding = bottomSafeArea + 74;
+    const bottomContentPadding = 28.0;
 
     return Scaffold(
       backgroundColor: AppColors.categoriesHeader,
-      bottomNavigationBar: CompanyDetailBottomBar(
-        onMapTap: () {},
-        onMessageTap: () {},
-      ),
+      // First release: map and chat actions are disabled until these flows are ready.
+      // bottomNavigationBar: CompanyDetailBottomBar(
+      //   onMapTap: () {},
+      //   onMessageTap: () {},
+      // ),
       body: CustomScrollView(
         slivers: [
-          const CompanyDetailAppBar(),
+          CompanyDetailAppBar(onShareTap: _shareCompanyLink),
           SliverToBoxAdapter(
             child: Container(
               width: double.infinity,
@@ -144,149 +149,173 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
                 color: AppColors.screenBackground,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
               ),
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(20, 28, 20, bottomContentPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Text(
-                        company.title,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(
-                              color: AppColors.detailTextGreen,
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                            ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Center(
-                      child: Text(
-                        company.detailSubtitle,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: AppColors.categoryTitle,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Text(
+                            company.title,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.headlineMedium
+                                ?.copyWith(
+                                  color: AppColors.detailTextGreen,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 6),
+                        Center(
+                          child: Text(
+                            company.detailSubtitle,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  color: AppColors.categoryTitle,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    CompanyImageCarousel(
-                      imageUrls: imageUrls,
-                      isFavorite: _isFavorite,
-                      onFavoriteTap: _toggleFavorite,
+                  ),
+                  CompanyImageCarousel(
+                    imageUrls: imageUrls,
+                    isFavorite: _isFavorite,
+                    onFavoriteTap: _toggleFavorite,
+                  ),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      20,
+                      28,
+                      20,
+                      bottomContentPadding,
                     ),
-                    const SizedBox(height: 28),
-                    FutureBuilder<int>(
-                      future: _reviewsCountFuture,
-                      builder: (context, snapshot) {
-                        return CompanyStatsRow(
-                          rating: company.rating,
-                          reviewsCount: snapshot.data ?? 0,
-                          workingTime: company.workingTime,
-                          onReviewsTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => ReviewsScreen(company: company),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FutureBuilder<int>(
+                          future: _reviewsCountFuture,
+                          builder: (context, snapshot) {
+                            return CompanyStatsRow(
+                              rating: company.rating,
+                              reviewsCount: snapshot.data ?? 0,
+                              workingTime: company.workingTime,
+                              onReviewsTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        ReviewsScreen(company: company),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 34),
+                        Text(
+                          'Ассортимент',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                color: AppColors.detailTextGreen,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 18),
+                        FutureBuilder<List<ProductModel>>(
+                          future: _productsFuture,
+                          builder: (context, snapshot) {
+                            final products = snapshot.data ?? const [];
+                            final assortmentItems = _mapProductsToAssortment(
+                              products,
+                            );
+
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const SizedBox(
+                                height: 170,
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+
+                            if (assortmentItems.isEmpty) {
+                              return const Text(
+                                'Ассортимент пока не добавлен',
+                                style: TextStyle(
+                                  color: AppColors.categoryTitle,
+                                  fontSize: 16,
+                                ),
+                              );
+                            }
+
+                            return SizedBox(
+                              height: 170,
+                              child: ListView.separated(
+                                clipBehavior: Clip.none,
+                                scrollDirection: Axis.horizontal,
+                                itemCount: assortmentItems.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(width: 10),
+                                itemBuilder: (context, index) {
+                                  return AssortmentCard(
+                                    item: assortmentItems[index],
+                                    onTap: () =>
+                                        _showProductDetails(products[index]),
+                                  );
+                                },
                               ),
                             );
                           },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 34),
-                    Text(
-                      'Ассортимент',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppColors.detailTextGreen,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    FutureBuilder<List<ProductModel>>(
-                      future: _productsFuture,
-                      builder: (context, snapshot) {
-                        final products = snapshot.data ?? const [];
-                        final assortmentItems = _mapProductsToAssortment(
-                          products,
-                        );
-
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const SizedBox(
-                            height: 170,
-                            child: Center(child: CircularProgressIndicator()),
-                          );
-                        }
-
-                        if (assortmentItems.isEmpty) {
-                          return const Text(
-                            'Ассортимент пока не добавлен',
-                            style: TextStyle(
-                              color: AppColors.categoryTitle,
-                              fontSize: 16,
-                            ),
-                          );
-                        }
-
-                        return SizedBox(
-                          height: 170,
-                          child: ListView.separated(
-                            clipBehavior: Clip.none,
-                            scrollDirection: Axis.horizontal,
-                            itemCount: assortmentItems.length,
-                            separatorBuilder: (_, _) =>
-                                const SizedBox(width: 10),
-                            itemBuilder: (context, index) {
-                              return AssortmentCard(
-                                item: assortmentItems[index],
-                                onTap: () =>
-                                    _showProductDetails(products[index]),
-                              );
-                            },
+                        ),
+                        const SizedBox(height: 34),
+                        Text(
+                          company.title,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                color: AppColors.detailTextGreen,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 22),
+                        Text(
+                          company.description.isEmpty
+                              ? 'Описание компании пока не добавлено'
+                              : company.description,
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(
+                                color: AppColors.categoryTitle,
+                                fontSize: 20,
+                                height: 1.35,
+                                fontWeight: FontWeight.w400,
+                              ),
+                        ),
+                        const SizedBox(height: 30),
+                        CompanyInfoRow(
+                          icon: Icons.location_on_outlined,
+                          title: company.displayAddress,
+                        ),
+                        if (company.phones.trim().isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          CompanyInfoRow(
+                            icon: Icons.phone_outlined,
+                            title: company.phones.trim(),
                           ),
-                        );
-                      },
+                        ],
+                      ],
                     ),
-                    const SizedBox(height: 34),
-                    Text(
-                      company.title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppColors.detailTextGreen,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    Text(
-                      company.description.isEmpty
-                          ? 'Описание компании пока не добавлено'
-                          : company.description,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.categoryTitle,
-                        fontSize: 20,
-                        height: 1.35,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    CompanyInfoRow(
-                      icon: Icons.location_on_outlined,
-                      title: company.displayAddress,
-                    ),
-                    if (company.phones.trim().isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      CompanyInfoRow(
-                        icon: Icons.phone_outlined,
-                        title: company.phones.trim(),
-                      ),
-                    ],
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),

@@ -22,18 +22,18 @@ class AddCompanyButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           onTap: isChecking ? null : onTap,
           child: Ink(
-            width: 58,
-            height: 58,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: AppColors.favoriteYellow,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: isChecking
                 ? const Padding(
-                    padding: EdgeInsets.all(17),
+                    padding: EdgeInsets.all(14),
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.add, size: 30, color: Color(0xFF45524A)),
+                : const Icon(Icons.add, size: 28, color: Color(0xFF45524A)),
           ),
         );
       },

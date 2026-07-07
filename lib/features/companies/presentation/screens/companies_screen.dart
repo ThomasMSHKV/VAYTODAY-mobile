@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
@@ -8,6 +10,10 @@ import 'package:VayToday/features/companies/presentation/cubit/companies_state.d
 import 'package:VayToday/features/companies/presentation/widgets/city_filter_chip.dart';
 import 'package:VayToday/features/companies/presentation/widgets/companies_search_field.dart';
 import 'package:VayToday/features/companies/presentation/widgets/company_list_card.dart';
+
+const _allTitle = '\u0412\u0441\u0435';
+const _emptyCompaniesTitle =
+    '\u041a\u043e\u043c\u043f\u0430\u043d\u0438\u0438 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b';
 
 class CompaniesScreen extends StatelessWidget {
   final String subcategoryTitle;
@@ -47,24 +53,54 @@ class _CompaniesView extends StatefulWidget {
 }
 
 class _CompaniesViewState extends State<_CompaniesView> {
+  Timer? _searchDebounce;
   String _searchQuery = '';
   int? _selectedCityId;
 
-  List<CompanyModel> _filterCompanies(List<CompanyModel> companies) {
-    final query = _searchQuery.trim().toLowerCase();
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
 
+  List<CompanyModel> _filterCompaniesByCity(List<CompanyModel> companies) {
     return companies.where((company) {
-      final matchesSearch =
-          query.isEmpty ||
-          company.title.toLowerCase().contains(query) ||
-          company.description.toLowerCase().contains(query) ||
-          company.serviceName.toLowerCase().contains(query);
-
-      final matchesCity =
-          _selectedCityId == null || company.cities.contains(_selectedCityId);
-
-      return matchesSearch && matchesCity;
+      return _selectedCityId == null ||
+          company.cities.contains(_selectedCityId);
     }).toList();
+  }
+
+  void _onSearchChanged(String value) {
+    final query = value.trim();
+    _searchDebounce?.cancel();
+
+    setState(() => _searchQuery = value);
+
+    _searchDebounce = Timer(const Duration(milliseconds: 450), () {
+      if (!mounted) return;
+      final cubit = context.read<CompaniesCubit>();
+      if (query.isEmpty) {
+        cubit.loadCompaniesByServiceId(widget.serviceId);
+      } else {
+        cubit.searchCompaniesByServiceId(
+          serviceId: widget.serviceId,
+          query: query,
+        );
+      }
+    });
+  }
+
+  Future<void> _refreshCompanies() {
+    final cubit = context.read<CompaniesCubit>();
+    final query = _searchQuery.trim();
+    if (query.isEmpty) {
+      return cubit.loadCompaniesByServiceId(widget.serviceId);
+    }
+
+    return cubit.searchCompaniesByServiceId(
+      serviceId: widget.serviceId,
+      query: query,
+    );
   }
 
   @override
@@ -91,12 +127,10 @@ class _CompaniesViewState extends State<_CompaniesView> {
             }
 
             final loaded = state as CompaniesLoaded;
-            final companies = _filterCompanies(loaded.companies);
+            final companies = _filterCompaniesByCity(loaded.companies);
 
             return RefreshIndicator(
-              onRefresh: () => context
-                  .read<CompaniesCubit>()
-                  .loadCompaniesByServiceId(widget.serviceId),
+              onRefresh: _refreshCompanies,
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
@@ -130,24 +164,14 @@ class _CompaniesViewState extends State<_CompaniesView> {
                       ),
                     ),
                   ),
-
                   const SliverToBoxAdapter(child: SizedBox(height: 18)),
-
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: CompaniesSearchField(
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value;
-                          });
-                        },
-                      ),
+                      child: CompaniesSearchField(onChanged: _onSearchChanged),
                     ),
                   ),
-
                   const SliverToBoxAdapter(child: SizedBox(height: 18)),
-
                   SliverToBoxAdapter(
                     child: SizedBox(
                       height: 34,
@@ -160,7 +184,7 @@ class _CompaniesViewState extends State<_CompaniesView> {
                         itemBuilder: (context, index) {
                           if (index == 0) {
                             return CityFilterChip(
-                              title: 'Все',
+                              title: _allTitle,
                               isSelected: _selectedCityId == null,
                               onTap: () {
                                 setState(() {
@@ -185,15 +209,18 @@ class _CompaniesViewState extends State<_CompaniesView> {
                       ),
                     ),
                   ),
-
                   const SliverToBoxAdapter(child: SizedBox(height: 22)),
-
-                  if (companies.isEmpty)
+                  if (loaded.isSearching)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (companies.isEmpty)
                     const SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(
                         child: Text(
-                          'Компании не найдены',
+                          _emptyCompaniesTitle,
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 16,

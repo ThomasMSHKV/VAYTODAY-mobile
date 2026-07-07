@@ -4,7 +4,7 @@ import 'package:VayToday/features/auth/presentation/widgets/auth_background.dart
 import 'package:VayToday/features/auth/presentation/widgets/auth_input_field.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_submit_button.dart';
 import 'package:VayToday/features/auth/presentation/widgets/auth_switch_button.dart';
-import 'package:VayToday/features/other/presentation/screens/privacy_policy_screen.dart';
+import 'package:VayToday/core/utils/privacy_policy_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
@@ -53,9 +53,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_canSubmit) return;
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('РџР°СЂРѕР»Рё РЅРµ СЃРѕРІРїР°РґР°СЋС‚')),
+      );
       return;
     }
 
@@ -89,7 +89,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось зарегистрироваться')),
+        const SnackBar(
+          content: Text(
+            'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ',
+          ),
+        ),
       );
     } finally {
       if (mounted) {
@@ -124,7 +128,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 10),
                   const Text(
-                    'РЕГИСТРАЦИЯ',
+                    'Р Р•Р“РРЎРўР РђР¦РРЇ',
                     style: TextStyle(
                       color: AppColors.authText,
                       fontSize: 34,
@@ -134,7 +138,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 2),
                   const Text(
-                    'Создайте свой аккаунт',
+                    'РЎРѕР·РґР°Р№С‚Рµ СЃРІРѕР№ Р°РєРєР°СѓРЅС‚',
                     style: TextStyle(
                       color: AppColors.authSubtitle,
                       fontSize: 12,
@@ -220,7 +224,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 10),
                         _AuthAgreementCheckbox(
                           value: _isPersonalDataAccepted,
-                          text: 'Я согласен на обработку персональных данных',
+                          text:
+                              'РЇ СЃРѕРіР»Р°СЃРµРЅ РЅР° РѕР±СЂР°Р±РѕС‚РєСѓ РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С…',
                           onChanged: (value) {
                             setState(() {
                               _isPersonalDataAccepted = value;
@@ -232,7 +237,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 42),
                   AuthSwitchButton(
-                    title: 'ВХОД',
+                    title: 'Р’РҐРћР”',
                     onTap: () {
                       Navigator.of(context).pop();
                     },
@@ -294,7 +299,7 @@ class _AuthAgreementCheckbox extends StatelessWidget {
                 ? Wrap(
                     children: [
                       const Text(
-                        'Я согласен с ',
+                        'РЇ СЃРѕРіР»Р°СЃРµРЅ СЃ ',
                         style: TextStyle(
                           color: AppColors.authSubtitle,
                           fontSize: 13,
@@ -302,15 +307,9 @@ class _AuthAgreementCheckbox extends StatelessWidget {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const PrivacyPolicyScreen(),
-                            ),
-                          );
-                        },
+                        onTap: () => openPrivacyPolicy(context),
                         child: const Text(
-                          'политикой конфиденциальности',
+                          'РїРѕР»РёС‚РёРєРѕР№ РєРѕРЅС„РёРґРµРЅС†РёР°Р»СЊРЅРѕСЃС‚Рё',
                           style: TextStyle(
                             color: AppColors.authGold,
                             fontSize: 13,

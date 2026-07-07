@@ -22,7 +22,7 @@ class _RecommendationCarouselState extends State<RecommendationCarousel> {
   Timer? _timer;
   int _currentPage = 0;
 
-  static const double _horizontalPadding = 20;
+  static const double _horizontalPadding = 10;
 
   @override
   void initState() {
@@ -63,7 +63,7 @@ class _RecommendationCarouselState extends State<RecommendationCarousel> {
     return Column(
       children: [
         SizedBox(
-          height: 240,
+          height: 212,
           width: double.infinity,
           child: PageView.builder(
             controller: _pageController,
@@ -90,7 +90,7 @@ class _RecommendationCarouselState extends State<RecommendationCarousel> {
                         Image.network(
                           company.imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) {
+                          errorBuilder: (_, _, _) {
                             return Container(
                               color: Colors.grey.shade300,
                               alignment: Alignment.center,

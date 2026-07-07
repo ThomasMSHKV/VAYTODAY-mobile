@@ -40,7 +40,7 @@ class _AddCompanyViewState extends State<_AddCompanyView> {
   final _imagePicker = ImagePicker();
 
   String? _selectedCategoryId;
-  String? _selectedServiceId;
+  final List<String> _selectedServiceIds = [];
   String? _selectedCityId;
   int? _selectedAddressId;
   TimeOfDay? _workStart;
@@ -121,32 +121,12 @@ class _AddCompanyViewState extends State<_AddCompanyView> {
                           onChanged: (value) {
                             setState(() {
                               _selectedCategoryId = value;
-                              _selectedServiceId = null;
+                              _selectedServiceIds.clear();
                             });
                           },
                         ),
                         const SizedBox(height: 28),
-                        AddCompanyDropdownField(
-                          label: 'Подкатегория',
-                          hintText: selectedCategory == null
-                              ? 'Сначала выберите категорию'
-                              : 'Выберите подкатегорию',
-                          icon: Icons.local_offer_outlined,
-                          items: (selectedCategory?.services ?? const [])
-                              .map(
-                                (service) => AddCompanyDropdownOption(
-                                  value: service.id.toString(),
-                                  label: service.name,
-                                ),
-                              )
-                              .toList(),
-                          value: _selectedServiceId,
-                          onChanged: selectedCategory == null
-                              ? null
-                              : (value) {
-                                  setState(() => _selectedServiceId = value);
-                                },
-                        ),
+                        _buildServiceFields(selectedCategory),
                         const SizedBox(height: 28),
                         AddCompanyTextField(
                           controller: _descriptionController,
@@ -214,6 +194,102 @@ class _AddCompanyViewState extends State<_AddCompanyView> {
     }
 
     return null;
+  }
+
+  Widget _buildServiceFields(HomeCategory? selectedCategory) {
+    final services = selectedCategory?.services ?? const <HomeService>[];
+
+    return Column(
+      children: [
+        AddCompanyDropdownField(
+          label:
+              '\u041f\u043e\u0434\u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f',
+          hintText: selectedCategory == null
+              ? '\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u0432\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e'
+              : '\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043f\u043e\u0434\u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e',
+          icon: Icons.local_offer_outlined,
+          items: _serviceOptions(services, 0),
+          value: _serviceValue(0),
+          onChanged: selectedCategory == null
+              ? null
+              : (value) => setState(() => _setServiceValue(0, value)),
+        ),
+        const SizedBox(height: 18),
+        AddCompanyDropdownField(
+          label:
+              '\u0412\u0442\u043e\u0440\u0430\u044f \u043f\u043e\u0434\u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f',
+          hintText: selectedCategory == null
+              ? '\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u0432\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e'
+              : '\u041c\u043e\u0436\u043d\u043e \u043e\u0441\u0442\u0430\u0432\u0438\u0442\u044c \u043f\u0443\u0441\u0442\u044b\u043c',
+          icon: Icons.sell_outlined,
+          items: _serviceOptions(services, 1),
+          value: _serviceValue(1),
+          onChanged: selectedCategory == null
+              ? null
+              : (value) => setState(() => _setServiceValue(1, value)),
+        ),
+      ],
+    );
+  }
+
+  List<AddCompanyDropdownOption> _serviceOptions(
+    List<HomeService> services,
+    int index,
+  ) {
+    final selectedElsewhere = _selectedServiceIds
+        .asMap()
+        .entries
+        .where((entry) => entry.key != index)
+        .map((entry) => entry.value)
+        .toSet();
+
+    final options = services
+        .where((service) => !selectedElsewhere.contains(service.id.toString()))
+        .map(
+          (service) => AddCompanyDropdownOption(
+            value: service.id.toString(),
+            label: service.name,
+          ),
+        )
+        .toList();
+
+    if (index == 1) {
+      return [
+        const AddCompanyDropdownOption(
+          value: '',
+          label: '\u041d\u0435 \u0432\u044b\u0431\u0440\u0430\u043d\u043e',
+        ),
+        ...options,
+      ];
+    }
+
+    return options;
+  }
+
+  String? _serviceValue(int index) {
+    if (index >= _selectedServiceIds.length) return null;
+    return _selectedServiceIds[index];
+  }
+
+  void _setServiceValue(int index, String? value) {
+    while (_selectedServiceIds.length <= index) {
+      _selectedServiceIds.add('');
+    }
+
+    if (value == null || value.isEmpty) {
+      if (index < _selectedServiceIds.length) {
+        _selectedServiceIds.removeAt(index);
+      }
+    } else {
+      _selectedServiceIds[index] = value;
+    }
+
+    _selectedServiceIds
+      ..removeWhere((id) => id.isEmpty)
+      ..removeRange(
+        _selectedServiceIds.length > 2 ? 2 : _selectedServiceIds.length,
+        _selectedServiceIds.length,
+      );
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -539,7 +615,12 @@ class _AddCompanyViewState extends State<_AddCompanyView> {
     final description = _descriptionController.text.trim();
     final phone = _phoneController.text.trim();
     final addressText = _addressController.text.trim();
-    final serviceId = int.tryParse(_selectedServiceId ?? '');
+    final serviceIds = _selectedServiceIds
+        .map(int.tryParse)
+        .whereType<int>()
+        .toSet()
+        .take(2)
+        .toList();
     final cityId = int.tryParse(_selectedCityId ?? '');
 
     if (title.isEmpty || description.isEmpty) {
@@ -550,7 +631,7 @@ class _AddCompanyViewState extends State<_AddCompanyView> {
       _showValidationMessage(context, 'Заполните номер телефона');
       return;
     }
-    if (_selectedCategoryId == null || serviceId == null) {
+    if (_selectedCategoryId == null || serviceIds.isEmpty) {
       _showValidationMessage(context, 'Выберите категорию и подкатегорию');
       return;
     }
@@ -572,7 +653,7 @@ class _AddCompanyViewState extends State<_AddCompanyView> {
         title: title,
         description: description,
         phone: phone,
-        serviceId: serviceId,
+        serviceIds: serviceIds,
         cityId: cityId,
         addressId: _selectedAddressId,
         addressText: addressText,

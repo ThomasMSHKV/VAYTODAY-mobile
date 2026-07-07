@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:VayToday/features/home/data/home_repository.dart';
 import 'package:VayToday/features/home/presentation/cubit/home_state.dart';
 
+const _homeLoadErrorMessage =
+    '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0434\u0430\u043d\u043d\u044b\u0435';
+
 class HomeCubit extends Cubit<HomeState> {
   final HomeRepository _repository;
 
@@ -31,7 +34,7 @@ class HomeCubit extends Cubit<HomeState> {
       debugPrint('HOME API ERROR: $e');
       debugPrint('HOME STACK: $stackTrace');
 
-      emit(HomeFailure('Не удалось загрузить данные: $e'));
+      emit(HomeFailure('$_homeLoadErrorMessage: $e'));
     }
   }
 }

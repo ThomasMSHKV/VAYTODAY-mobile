@@ -16,8 +16,13 @@ class CompaniesLoading extends CompaniesState {
 class CompaniesLoaded extends CompaniesState {
   final List<CompanyModel> companies;
   final List<CityModel> cities;
+  final bool isSearching;
 
-  const CompaniesLoaded({required this.companies, required this.cities});
+  const CompaniesLoaded({
+    required this.companies,
+    required this.cities,
+    this.isSearching = false,
+  });
 }
 
 class CompaniesFailure extends CompaniesState {

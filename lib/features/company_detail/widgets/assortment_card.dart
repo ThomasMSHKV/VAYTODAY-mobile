@@ -1,4 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:VayToday/core/theme/app_colors.dart';
 import 'package:VayToday/features/company_detail/domain/models/company_assortment_item.dart';
 
@@ -31,10 +33,14 @@ class AssortmentCard extends StatelessWidget {
                   width: double.infinity,
                   child: item.imageUrl.isEmpty
                       ? const _ImagePlaceholder()
-                      : Image.network(
-                          item.imageUrl,
+                      : CachedNetworkImage(
+                          imageUrl: item.imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
+                          memCacheWidth: 360,
+                          fadeInDuration: Duration.zero,
+                          placeholder: (context, url) =>
+                              const _ImagePlaceholder(),
+                          errorWidget: (context, url, error) =>
                               const _ImagePlaceholder(),
                         ),
                 ),
@@ -116,10 +122,15 @@ class _ImagePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.grey.shade300,
-      alignment: Alignment.center,
-      child: const Icon(Icons.image_outlined, size: 28),
+    return Shimmer.fromColors(
+      baseColor: AppColors.detailLightGreen,
+      highlightColor: AppColors.favoriteYellow.withValues(alpha: 0.35),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.detailLightGreen,
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
     );
   }
 }

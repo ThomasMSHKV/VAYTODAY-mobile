@@ -4,11 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:VayToday/core/theme/app_colors.dart';
+import 'package:VayToday/features/addresses/data/addresses_repository.dart';
+import 'package:VayToday/features/addresses/domain/models/address_model.dart';
+import 'package:VayToday/features/add_company/presentation/widgets/add_company_dropdown_field.dart';
 import 'package:VayToday/features/add_company/presentation/widgets/add_company_text_field.dart';
+import 'package:VayToday/features/categories/data/categories_repository.dart';
 import 'package:VayToday/features/companies/data/company_management_repository.dart';
 import 'package:VayToday/features/companies/domain/models/company_model.dart';
 import 'package:VayToday/features/products/data/products_repository.dart';
 import 'package:VayToday/features/products/domain/models/product_model.dart';
+import 'package:VayToday/features/home/domain/models/home_category.dart';
 
 class CompanyManagementScreen extends StatefulWidget {
   final CompanyModel company;
@@ -22,14 +27,23 @@ class CompanyManagementScreen extends StatefulWidget {
 
 class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
   final _companyRepository = CompanyManagementRepository();
+  final _addressesRepository = AddressesRepository();
+  final _categoriesRepository = CategoriesRepository();
   final _productsRepository = ProductsRepository();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
+  final _addressFocusNode = FocusNode();
 
   late CompanyModel _company;
   late Future<List<ProductModel>> _productsFuture;
+  late Future<List<AddressModel>> _addressesFuture;
+  late Future<List<HomeCategory>> _categoriesFuture;
+  List<AddressModel> _addresses = const [];
+  int? _selectedAddressId;
+  String? _selectedCategoryId;
+  final List<String> _selectedServiceIds = [];
   TimeOfDay? _workStart;
   TimeOfDay? _workEnd;
   bool _isSavingCompany = false;
@@ -41,6 +55,8 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
     _company = widget.company;
     _fillCompanyFields(_company);
     _productsFuture = _productsRepository.getProductsByCompanyId(_company.id);
+    _addressesFuture = _addressesRepository.getAddresses();
+    _categoriesFuture = _categoriesRepository.getCategories();
   }
 
   @override
@@ -49,6 +65,7 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
     _descriptionController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _addressFocusNode.dispose();
     super.dispose();
   }
 
@@ -59,6 +76,15 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
     _addressController.text = company.displayAddress == 'Адрес пока не указан'
         ? ''
         : company.displayAddress;
+    _selectedAddressId = company.address;
+    _selectedServiceIds
+      ..clear()
+      ..addAll(
+        company.services.take(2).map((service) => service.id.toString()),
+      );
+    _selectedCategoryId = company.services.isEmpty
+        ? null
+        : company.services.first.categoryId.toString();
     _workStart = _parseTime(company.workStart);
     _workEnd = _parseTime(company.workEnd);
   }
@@ -112,7 +138,7 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.authText,
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -187,11 +213,49 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
           keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: 22),
-        AddCompanyTextField(
-          controller: _addressController,
-          label: 'Адрес компании',
-          hintText: 'Введите адрес компании',
-          icon: Icons.location_on_outlined,
+        FutureBuilder<List<HomeCategory>>(
+          future: _categoriesFuture,
+          builder: (context, snapshot) {
+            final categories = snapshot.data ?? const <HomeCategory>[];
+            final selectedCategory = _selectedCategory(categories);
+            return Column(
+              children: [
+                AddCompanyDropdownField(
+                  label:
+                      '\u041a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f',
+                  hintText:
+                      '\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e',
+                  icon: Icons.grid_view_rounded,
+                  items: categories
+                      .map(
+                        (category) => AddCompanyDropdownOption(
+                          value: category.id.toString(),
+                          label: category.title,
+                        ),
+                      )
+                      .toList(),
+                  value: _selectedCategoryId,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCategoryId = value;
+                      _selectedServiceIds.clear();
+                    });
+                  },
+                ),
+                const SizedBox(height: 22),
+                _buildServiceFields(selectedCategory),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 22),
+        FutureBuilder<List<AddressModel>>(
+          future: _addressesFuture,
+          builder: (context, snapshot) {
+            final addresses = snapshot.data ?? _addresses;
+            if (snapshot.hasData) _addresses = addresses;
+            return _buildAddressSearchField(addresses);
+          },
         ),
         const SizedBox(height: 22),
         _buildWorkTimeField(),
@@ -260,6 +324,299 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
     );
   }
 
+  HomeCategory? _selectedCategory(List<HomeCategory> categories) {
+    final categoryId = int.tryParse(_selectedCategoryId ?? '');
+    if (categoryId == null) return null;
+
+    for (final category in categories) {
+      if (category.id == categoryId) return category;
+    }
+
+    return null;
+  }
+
+  Widget _buildServiceFields(HomeCategory? selectedCategory) {
+    final services = selectedCategory?.services ?? const <HomeService>[];
+
+    return Column(
+      children: [
+        AddCompanyDropdownField(
+          label:
+              '\u041f\u043e\u0434\u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f',
+          hintText: selectedCategory == null
+              ? '\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u0432\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e'
+              : '\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043f\u043e\u0434\u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e',
+          icon: Icons.local_offer_outlined,
+          items: _serviceOptions(services, 0),
+          value: _serviceValue(0),
+          onChanged: selectedCategory == null
+              ? null
+              : (value) => setState(() => _setServiceValue(0, value)),
+        ),
+        const SizedBox(height: 18),
+        AddCompanyDropdownField(
+          label:
+              '\u0412\u0442\u043e\u0440\u0430\u044f \u043f\u043e\u0434\u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f',
+          hintText: selectedCategory == null
+              ? '\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u0432\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e'
+              : '\u041c\u043e\u0436\u043d\u043e \u043e\u0441\u0442\u0430\u0432\u0438\u0442\u044c \u043f\u0443\u0441\u0442\u044b\u043c',
+          icon: Icons.sell_outlined,
+          items: _serviceOptions(services, 1),
+          value: _serviceValue(1),
+          onChanged: selectedCategory == null
+              ? null
+              : (value) => setState(() => _setServiceValue(1, value)),
+        ),
+      ],
+    );
+  }
+
+  List<AddCompanyDropdownOption> _serviceOptions(
+    List<HomeService> services,
+    int index,
+  ) {
+    final selectedElsewhere = _selectedServiceIds
+        .asMap()
+        .entries
+        .where((entry) => entry.key != index)
+        .map((entry) => entry.value)
+        .toSet();
+
+    final options = services
+        .where((service) => !selectedElsewhere.contains(service.id.toString()))
+        .map(
+          (service) => AddCompanyDropdownOption(
+            value: service.id.toString(),
+            label: service.name,
+          ),
+        )
+        .toList();
+
+    if (index == 1) {
+      return [
+        const AddCompanyDropdownOption(
+          value: '',
+          label: '\u041d\u0435 \u0432\u044b\u0431\u0440\u0430\u043d\u043e',
+        ),
+        ...options,
+      ];
+    }
+
+    return options;
+  }
+
+  String? _serviceValue(int index) {
+    if (index >= _selectedServiceIds.length) return null;
+    return _selectedServiceIds[index];
+  }
+
+  void _setServiceValue(int index, String? value) {
+    while (_selectedServiceIds.length <= index) {
+      _selectedServiceIds.add('');
+    }
+
+    if (value == null || value.isEmpty) {
+      if (index < _selectedServiceIds.length) {
+        _selectedServiceIds.removeAt(index);
+      }
+    } else {
+      _selectedServiceIds[index] = value;
+    }
+
+    _selectedServiceIds
+      ..removeWhere((id) => id.isEmpty)
+      ..removeRange(
+        _selectedServiceIds.length > 2 ? 2 : _selectedServiceIds.length,
+        _selectedServiceIds.length,
+      );
+  }
+
+  Widget _buildAddressSearchField(List<AddressModel> addresses) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '\u0410\u0434\u0440\u0435\u0441 \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u0438',
+          style: TextStyle(
+            color: AppColors.authText,
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 10),
+        RawAutocomplete<AddressModel>(
+          textEditingController: _addressController,
+          focusNode: _addressFocusNode,
+          displayStringForOption: (address) => address.name,
+          optionsBuilder: (textEditingValue) {
+            final query = textEditingValue.text.trim().toLowerCase();
+            if (query.isEmpty) return const Iterable<AddressModel>.empty();
+
+            return addresses
+                .where((address) => address.name.toLowerCase().contains(query))
+                .take(8);
+          },
+          onSelected: (address) {
+            setState(() {
+              _selectedAddressId = address.id;
+              _addressController.text = address.name;
+            });
+          },
+          fieldViewBuilder: (context, textController, focusNode, onFieldSubmitted) {
+            return Container(
+              height: 58,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.location_on_outlined,
+                    color: AppColors.authGold,
+                    size: 23,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: textController,
+                      focusNode: focusNode,
+                      cursorColor: AppColors.authGold,
+                      onChanged: (value) {
+                        final selectedAddress = _selectedAddress(addresses);
+                        if (selectedAddress?.name != value &&
+                            _selectedAddressId != null) {
+                          setState(() => _selectedAddressId = null);
+                        }
+                      },
+                      decoration: const InputDecoration(
+                        hintText:
+                            '\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u0432\u0432\u043e\u0434\u0438\u0442\u044c \u0430\u0434\u0440\u0435\u0441',
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        hintStyle: TextStyle(
+                          color: AppColors.textLight,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.search_rounded,
+                    color: AppColors.authText,
+                    size: 22,
+                  ),
+                ],
+              ),
+            );
+          },
+          optionsViewBuilder: (context, onSelected, options) {
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: MediaQuery.of(context).size.width - 44,
+                  constraints: const BoxConstraints(maxHeight: 260),
+                  margin: const EdgeInsets.only(top: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.14),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shrinkWrap: true,
+                    itemCount: options.length,
+                    separatorBuilder: (context, index) => Divider(
+                      height: 1,
+                      color: AppColors.border.withValues(alpha: 0.65),
+                    ),
+                    itemBuilder: (context, index) {
+                      final address = options.elementAt(index);
+                      return ListTile(
+                        dense: true,
+                        leading: const Icon(
+                          Icons.place_outlined,
+                          color: AppColors.detailTextGreen,
+                        ),
+                        title: Text(
+                          address.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.authText,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        onTap: () => onSelected(address),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  AddressModel? _selectedAddress(List<AddressModel> addresses) {
+    final selectedId = _selectedAddressId;
+    if (selectedId == null) return null;
+
+    for (final address in addresses) {
+      if (address.id == selectedId) return address;
+    }
+
+    return null;
+  }
+
+  AddressModel? _findAddressByName(String value) {
+    final normalizedValue = value.trim().toLowerCase();
+    if (normalizedValue.isEmpty) return null;
+
+    for (final address in _addresses) {
+      if (address.name.trim().toLowerCase() == normalizedValue) {
+        return address;
+      }
+    }
+
+    return null;
+  }
+
+  Future<int> _resolveAddressId(String addressText) async {
+    final selectedId = _selectedAddressId;
+    final selectedAddress = _selectedAddress(_addresses);
+    if (selectedId != null && selectedAddress?.name == addressText) {
+      return selectedId;
+    }
+
+    final matchedAddress = _findAddressByName(addressText);
+    if (matchedAddress != null) {
+      _selectedAddressId = matchedAddress.id;
+      return matchedAddress.id;
+    }
+
+    final createdAddress = await _addressesRepository.createAddress(
+      addressText,
+    );
+    _selectedAddressId = createdAddress.id;
+    _addresses = [..._addresses, createdAddress];
+    return createdAddress.id;
+  }
+
   Widget _buildWorkTimeField() {
     final value = _workStart == null || _workEnd == null
         ? 'Выберите начало и конец'
@@ -272,7 +629,7 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
           'Время работы',
           style: TextStyle(
             color: AppColors.authText,
-            fontSize: 18,
+            fontSize: 15,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -328,7 +685,7 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
             'Продукты',
             style: TextStyle(
               color: AppColors.authText,
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -425,12 +782,24 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
     final description = _descriptionController.text.trim();
     final phone = _phoneController.text.trim();
     final address = _addressController.text.trim();
+    final serviceIds = _selectedServiceIds
+        .map(int.tryParse)
+        .whereType<int>()
+        .toSet()
+        .take(2)
+        .toList();
 
     if (title.isEmpty ||
         description.isEmpty ||
         phone.isEmpty ||
         address.isEmpty) {
       _showMessage('Заполните название, описание, телефон и адрес');
+      return;
+    }
+    if (_selectedCategoryId == null || serviceIds.isEmpty) {
+      _showMessage(
+        '\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e \u0438 \u043f\u043e\u0434\u043a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044e',
+      );
       return;
     }
     if (_workStart == null || _workEnd == null) {
@@ -440,12 +809,15 @@ class _CompanyManagementScreenState extends State<CompanyManagementScreen> {
 
     setState(() => _isSavingCompany = true);
     try {
+      final addressId = await _resolveAddressId(address);
       final updated = await _companyRepository.updateCompany(
         UpdateCompanyRequest(
           company: _company,
           title: title,
           description: description,
           phone: phone,
+          addressId: addressId,
+          serviceIds: serviceIds,
           addressText: address,
           workStart: _formatTime(_workStart!),
           workEnd: _formatTime(_workEnd!),
@@ -750,7 +1122,7 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
               isEditing ? 'Редактировать продукт' : 'Добавить продукт',
               style: const TextStyle(
                 color: AppColors.authText,
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -994,7 +1366,7 @@ class _ProductFormSheetState extends State<_ProductFormSheet> {
           'Фото продукта',
           style: TextStyle(
             color: AppColors.authText,
-            fontSize: 18,
+            fontSize: 15,
             fontWeight: FontWeight.w800,
           ),
         ),
