@@ -8,7 +8,9 @@ import 'package:VayToday/features/profile/data/profile_repository.dart';
 import 'package:VayToday/features/profile/presentation/screens/saved_companies_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final int refreshToken;
+
+  const ProfileScreen({super.key, this.refreshToken = 0});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -25,6 +27,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _isAuthorizedFuture = _sessionStorage.isAuthorized();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshToken != widget.refreshToken) {
+      _refreshAuthorization();
+    }
   }
 
   void _refreshAuthorization() {
@@ -392,30 +402,6 @@ class _ProfileAvatar extends StatelessWidget {
               Icons.person_rounded,
               size: 112,
               color: Color(0xFFC8CAD2),
-            ),
-          ),
-          Positioned(
-            right: 6,
-            bottom: 12,
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.14),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.add_rounded,
-                color: Color(0xFF686868),
-                size: 28,
-              ),
             ),
           ),
         ],

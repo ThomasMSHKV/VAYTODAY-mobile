@@ -50,7 +50,7 @@ class _CategoriesView extends StatelessWidget {
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 const CategoriesAppBar(),
-                const SliverToBoxAdapter(child: SizedBox(height: 56)),
+                const SliverToBoxAdapter(child: SizedBox(height: 32)),
                 const SliverPadding(
                   padding: EdgeInsets.symmetric(horizontal: 20),
                   sliver: SliverToBoxAdapter(child: DiscountBanner()),
