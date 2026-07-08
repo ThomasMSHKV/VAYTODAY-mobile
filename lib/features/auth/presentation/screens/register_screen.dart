@@ -53,9 +53,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_canSubmit) return;
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('РџР°СЂРѕР»Рё РЅРµ СЃРѕРІРїР°РґР°СЋС‚')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Пароли не совпадают')));
       return;
     }
 
@@ -89,11 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ',
-          ),
-        ),
+        const SnackBar(content: Text('Не удалось зарегистрироваться')),
       );
     } finally {
       if (mounted) {
@@ -128,7 +124,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 10),
                   const Text(
-                    'Р Р•Р“РРЎРўР РђР¦РРЇ',
+                    'РЕГИСТРАЦИЯ',
                     style: TextStyle(
                       color: AppColors.authText,
                       fontSize: 34,
@@ -138,7 +134,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 2),
                   const Text(
-                    'РЎРѕР·РґР°Р№С‚Рµ СЃРІРѕР№ Р°РєРєР°СѓРЅС‚',
+                    'Создайте свой аккаунт',
                     style: TextStyle(
                       color: AppColors.authSubtitle,
                       fontSize: 12,
@@ -224,8 +220,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 10),
                         _AuthAgreementCheckbox(
                           value: _isPersonalDataAccepted,
-                          text:
-                              'РЇ СЃРѕРіР»Р°СЃРµРЅ РЅР° РѕР±СЂР°Р±РѕС‚РєСѓ РїРµСЂСЃРѕРЅР°Р»СЊРЅС‹С… РґР°РЅРЅС‹С…',
+                          text: 'Я согласен на обработку персональных данных',
                           onChanged: (value) {
                             setState(() {
                               _isPersonalDataAccepted = value;
@@ -237,7 +232,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 42),
                   AuthSwitchButton(
-                    title: 'Р’РҐРћР”',
+                    title: 'ВХОД',
                     onTap: () {
                       Navigator.of(context).pop();
                     },
@@ -299,7 +294,7 @@ class _AuthAgreementCheckbox extends StatelessWidget {
                 ? Wrap(
                     children: [
                       const Text(
-                        'РЇ СЃРѕРіР»Р°СЃРµРЅ СЃ ',
+                        'Я согласен с ',
                         style: TextStyle(
                           color: AppColors.authSubtitle,
                           fontSize: 13,
@@ -309,7 +304,7 @@ class _AuthAgreementCheckbox extends StatelessWidget {
                       GestureDetector(
                         onTap: () => openPrivacyPolicy(context),
                         child: const Text(
-                          'РїРѕР»РёС‚РёРєРѕР№ РєРѕРЅС„РёРґРµРЅС†РёР°Р»СЊРЅРѕСЃС‚Рё',
+                          'политикой конфиденциальности',
                           style: TextStyle(
                             color: AppColors.authGold,
                             fontSize: 13,

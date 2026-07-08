@@ -24,10 +24,10 @@ class AuthSessionStorage {
 
   Future<bool> isAuthorized() async {
     final preferences = await SharedPreferences.getInstance();
-    final isAuthorized = preferences.getBool(_isAuthorizedKey) ?? false;
     final accessToken = preferences.getString(_accessTokenKey) ?? '';
+    final refreshToken = preferences.getString(_refreshTokenKey) ?? '';
 
-    return isAuthorized && accessToken.isNotEmpty;
+    return accessToken.isNotEmpty || refreshToken.isNotEmpty;
   }
 
   Future<String?> getAccessToken() async {
